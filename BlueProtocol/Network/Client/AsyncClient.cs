@@ -71,9 +71,9 @@ namespace BlueProtocol.Network
         }
 
 
-        public void Send(Event @event)
+        public void Send(Event ev)
         {
-            var message = Message.Create(@event);
+            var message = Message.Create(ev);
 
             try {
                 message.Send(this.networkStream);

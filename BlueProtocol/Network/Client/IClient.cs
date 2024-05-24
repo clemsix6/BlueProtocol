@@ -11,7 +11,7 @@ namespace BlueProtocol.Network
         int Timeout { get; set; }
 
         void Send(Request request);
-        void Send(Event @event);
+        void Send(Event ev);
         void AddController(Controller controller);
         void Dispose(DisconnectEvent disconnectEvent);
     }
