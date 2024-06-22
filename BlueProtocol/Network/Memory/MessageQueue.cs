@@ -1,11 +1,8 @@
-﻿using System.Collections.Generic;
-
-
-namespace BlueProtocol.Network.Messages
+﻿namespace BlueProtocol.Network.Messages
 {
     public class MessageQueue
     {
-        private readonly List<object> messages = new List<object>();
+        private readonly List<object> messages = new();
 
 
         public void Enqueue(object message)

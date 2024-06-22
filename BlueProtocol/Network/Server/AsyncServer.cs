@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using BlueProtocol.Requests;
 
@@ -12,10 +10,17 @@ namespace BlueProtocol.Network
         public Action<AsyncClient> OnClientConnectedEvent;
 
         private readonly TcpListener tcpListener;
-        private readonly List<AsyncClient> clients = new List<AsyncClient>();
-        private readonly List<Controller> controllers = new List<Controller>();
+        private readonly List<AsyncClient> clients = [];
+        private readonly List<Controller> controllers = [];
 
         public bool IsRunning => this.tcpListener.Server.IsBound;
+        public IPEndPoint LocalEndPoint => (IPEndPoint)this.tcpListener.LocalEndpoint;
+
+
+        public AsyncServer()
+        {
+            this.tcpListener = new TcpListener(IPAddress.Loopback, 0);
+        }
 
 
         public AsyncServer(int port)
@@ -65,6 +70,18 @@ namespace BlueProtocol.Network
         public void Dispose()
         {
             this.tcpListener.Stop();
+        }
+
+
+        public IClient Connect(IPEndPoint remoteEndPoint)
+        {
+            var client = AsyncClient.Connect(remoteEndPoint);
+            lock (this.clients)
+                this.clients.Add(client);
+            lock (this.controllers)
+                this.controllers.ForEach(x => client.AddController(x));
+            this.OnClientConnectedEvent?.Invoke(client);
+            return client;
         }
     }
 }

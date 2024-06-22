@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using BlueProtocol.Exceptions;
 using BlueProtocol.Network;
 using BlueProtocol.Network.Events;
@@ -10,11 +7,11 @@ using BlueProtocol.Network.Events;
 namespace BlueProtocol.Requests
 {
     [AttributeUsage(AttributeTargets.Method)]
-    public class OnRequest : Attribute { }
+    public class OnRequest : Attribute;
 
 
     [AttributeUsage(AttributeTargets.Method)]
-    public class OnEvent : Attribute { }
+    public class OnEvent : Attribute;
 
 
     /// <summary>
@@ -22,8 +19,8 @@ namespace BlueProtocol.Requests
     /// </summary>
     public class Controller
     {
-        private readonly List<ControllerRequest> requests = new List<ControllerRequest>();
-        private readonly List<ControllerEvent> events = new List<ControllerEvent>();
+        private readonly List<ControllerRequest> requests = [];
+        private readonly List<ControllerEvent> events = [];
 
 
         private void BuildRequest(Type type, MethodInfo method)
@@ -110,7 +107,7 @@ namespace BlueProtocol.Requests
 
         internal void Build()
         {
-            if (this.requests.Any() || this.events.Any()) return;
+            if (this.requests.Count != 0 || this.events.Count != 0) return;
 
             var types = new List<Type> { this.GetType() };
             types.AddRange(this.GetType().Assembly.GetTypes().Where(t => t.IsSubclassOf(this.GetType())));
@@ -133,7 +130,7 @@ namespace BlueProtocol.Requests
             var request = this.requests.Find(x => x.InputType == input.GetType());
             if (request == null) return false;
 
-            var args = request.ClientType != null ? new object[] { client, input } : new object[] { input };
+            var args = request.ClientType != null ? new object[] { client, input } : [input];
             output = request.Method.Invoke(this, args);
             if (output is Response response)
                 response.RequestId = input.Id;
@@ -146,7 +143,7 @@ namespace BlueProtocol.Requests
             var e = this.events.Find(x => x.InputType == input.GetType());
             if (e == null) return false;
 
-            var args = e.ClientType != null ? new object[] { client, input } : new object[] { input };
+            var args = e.ClientType != null ? new object[] { client, input } : [input];
             e.Method.Invoke(this, args);
             return true;
         }

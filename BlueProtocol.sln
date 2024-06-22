@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueProtocol", "BlueProtocol\BlueProtocol.csproj", "{6BC761D3-BF07-4CD3-96D7-69EE52387393}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueProtocolLab", "BlueProtocolLab\BlueProtocolLab.csproj", "{2B7F8196-929F-4294-AC0E-0F6D797007EF}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,9 +12,5 @@ Global
 		{6BC761D3-BF07-4CD3-96D7-69EE52387393}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6BC761D3-BF07-4CD3-96D7-69EE52387393}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6BC761D3-BF07-4CD3-96D7-69EE52387393}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2B7F8196-929F-4294-AC0E-0F6D797007EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2B7F8196-929F-4294-AC0E-0F6D797007EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2B7F8196-929F-4294-AC0E-0F6D797007EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2B7F8196-929F-4294-AC0E-0F6D797007EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

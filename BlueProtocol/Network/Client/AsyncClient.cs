@@ -1,9 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using BlueProtocol.Exceptions;
 using BlueProtocol.Network.Events;
 using BlueProtocol.Network.Messages;
@@ -24,10 +20,11 @@ namespace BlueProtocol.Network
         private readonly TcpClient tcpClient;
         private readonly NetworkStream networkStream;
 
-        private readonly ClientMemory<Controller> controllers = new ClientMemory<Controller>();
-        private readonly ClientMemory<Request> requests = new ClientMemory<Request>();
+        private readonly ClientMemory<Controller> controllers = new();
+        private readonly ClientMemory<Request> requests = new();
 
         public bool IsConnected { get; private set; }
+        public IPEndPoint RemoteEndPoint => (IPEndPoint)this.tcpClient.Client.RemoteEndPoint;
 
 
         internal AsyncClient(TcpClient tcpClient)
@@ -51,6 +48,14 @@ namespace BlueProtocol.Network
         public static AsyncClient Connect(string host, int port)
         {
             var client = new AsyncClient(host, port);
+            client.Start();
+            return client;
+        }
+
+
+        public static AsyncClient Connect(IPEndPoint remoteEndPoint)
+        {
+            var client = new AsyncClient(remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
             client.Start();
             return client;
         }

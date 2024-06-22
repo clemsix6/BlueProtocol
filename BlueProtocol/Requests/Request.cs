@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 
 namespace BlueProtocol.Requests
@@ -8,7 +6,7 @@ namespace BlueProtocol.Requests
     public class Request
     {
         [JsonProperty] public string Id { get; internal set; }
-        [JsonIgnore] private List<Action<Response>> OnResponseEvent { get; } = new List<Action<Response>>();
+        [JsonIgnore] private List<Action<Response>> OnResponseEvent { get; } = [];
 
 
         internal void OnResponse(Response response)

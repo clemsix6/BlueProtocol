@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-
-
-namespace BlueProtocol.Network
+﻿namespace BlueProtocol.Network
 {
     public class ClientMemory<T>
     {
-        private readonly List<T> memory = new List<T>();
-        private readonly Dictionary<T, DateTime> timedMemory = new Dictionary<T, DateTime>();
+        private readonly List<T> memory = new();
+        private readonly Dictionary<T, DateTime> timedMemory = new();
 
 
         public List<T> Items => this.memory;

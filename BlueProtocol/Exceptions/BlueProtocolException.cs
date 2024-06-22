@@ -1,7 +1,4 @@
-﻿using System;
-
-
-namespace BlueProtocol.Exceptions
+﻿namespace BlueProtocol.Exceptions
 {
     public class BlueProtocolException : Exception
     {
