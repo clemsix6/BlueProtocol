@@ -49,6 +49,11 @@ namespace BlueProtocol.Requests
                 }
             }
 
+            if (parameters[0].ParameterType != clientType)
+                throw new BlueProtocolControllerException(
+                    $"The first parameter in {method.Name} in {type} must be inherited from IClient"
+                );
+
             if (inputType == null)
                 throw new BlueProtocolControllerException(
                     $"The method {method.Name} in {type} must have one parameter inherited from Request");
@@ -92,6 +97,11 @@ namespace BlueProtocol.Requests
                         $"The parameter {parameter.Name} in {method.Name} in {type} is not a valid type");
                 }
             }
+
+            if (parameters[0].ParameterType != clientType)
+                throw new BlueProtocolControllerException(
+                    $"The first parameter in {method.Name} in {type} must be inherited from IClient"
+                );
 
             if (inputType == null)
                 throw new BlueProtocolControllerException(
