@@ -8,16 +8,22 @@ using BlueProtocol.Network.Requests;
 namespace BlueProtocol.Controllers;
 
 
+/// <summary>
+/// Attribute to mark a method as handling a specific type of request.
+/// </summary>
 [AttributeUsage(AttributeTargets.Method)]
 public class OnRequest : Attribute;
 
 
+/// <summary>
+/// Attribute to mark a method as handling a specific type of event.
+/// </summary>
 [AttributeUsage(AttributeTargets.Method)]
 public class OnEvent : Attribute;
 
 
 /// <summary>
-/// The <c>Controller</c> class models the logic for the requests.
+/// The <c>Controller</c> class models the logic for handling requests and events.
 /// </summary>
 public class Controller
 {
@@ -51,7 +57,7 @@ public class Controller
             }
         }
 
-        if (parameters[0].ParameterType != clientType)
+        if (clientType != null && parameters[0].ParameterType != clientType)
             throw new BlueProtocolControllerException(
                 $"The first parameter in {method.Name} in {type} must be inherited from IClient"
             );
@@ -100,7 +106,7 @@ public class Controller
             }
         }
 
-        if (parameters[0].ParameterType != clientType)
+        if (clientType != null && parameters[0].ParameterType != clientType)
             throw new BlueProtocolControllerException(
                 $"The first parameter in {method.Name} in {type} must be inherited from IClient"
             );
@@ -127,9 +133,9 @@ public class Controller
         foreach (var type in types) {
             var methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             foreach (var method in methods) {
-                if (method.GetCustomAttributes(typeof(OnRequest), false).Any())
+                if (method.GetCustomAttributes(typeof(OnRequest), false).Length != 0)
                     BuildRequest(type, method);
-                else if (method.GetCustomAttributes(typeof(OnEvent), false).Any())
+                else if (method.GetCustomAttributes(typeof(OnEvent), false).Length != 0)
                     BuildEvent(type, method);
             }
         }
@@ -145,7 +151,7 @@ public class Controller
         var args = request.ClientType != null ? new object[] { client, input } : [input];
         output = request.Method.Invoke(this, args);
         if (output is Response response)
-            response.RequestId = input.Id;
+            response.RequestId = input.RequestId;
         return true;
     }
 

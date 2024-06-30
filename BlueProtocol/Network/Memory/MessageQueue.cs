@@ -1,7 +1,7 @@
 ﻿namespace BlueProtocol.Network.Messages;
 
 
-public class MessageQueue
+internal class MessageQueue
 {
     private readonly List<object> messages = [];
 

@@ -11,7 +11,8 @@ namespace BlueProtocol.Network;
 
 
 /// <summary>
-/// Class <c>Client</c> models all the logic for a client, it includes the connection and the communication.
+/// Class <c>AsyncClient</c> models all the logic for a client, it includes the connection and the communication.
+/// It processes all the messages in different threads instantly when they are received.
 /// </summary>
 public class AsyncClient : IClient
 {
@@ -20,6 +21,7 @@ public class AsyncClient : IClient
     // ReSharper disable once MemberCanBePrivate.Global
     public Action<AsyncClient, DisconnectEvent> OnDisconnectedEvent;
 
+    /// <inheritdoc/>
     public int Timeout { get; set; } = 5000;
 
     private readonly TcpClient tcpClient;
@@ -28,8 +30,14 @@ public class AsyncClient : IClient
     private readonly ClientMemory<Controller> controllers = new();
     private readonly ClientMemory<Request> requests = new();
 
+    /// <inheritdoc/>
     public bool IsConnected { get; private set; }
+
+    /// <inheritdoc/>
     public IPEndPoint RemoteEndPoint => (IPEndPoint)this.tcpClient.Client.RemoteEndPoint;
+
+    /// <inheritdoc/>
+    public IPEndPoint LocalEndPoint => (IPEndPoint)this.tcpClient.Client.LocalEndPoint;
 
 
     internal AsyncClient(TcpClient tcpClient)
@@ -43,13 +51,37 @@ public class AsyncClient : IClient
 
     private AsyncClient(string host, int port)
     {
-        this.tcpClient = new TcpClient(host, port);
-        this.networkStream = this.tcpClient.GetStream();
+        try {
+            this.tcpClient = new TcpClient(host, port);
+        } catch (ObjectDisposedException e) {
+            throw new BlueProtocolNetworkException("The TcpClient is disposed", e);
+        } catch (ArgumentNullException e) {
+            throw new BlueProtocolNetworkException("Host is null", e);
+        } catch (ArgumentOutOfRangeException e) {
+            throw new BlueProtocolNetworkException("Port is out of range", e);
+        } catch (SocketException e) {
+            throw new BlueProtocolNetworkException("Socket error", e);
+        }
+
+        try {
+            this.networkStream = this.tcpClient.GetStream();
+        } catch (ObjectDisposedException e) {
+            throw new BlueProtocolNetworkException("The TcpClient is disposed", e);
+        } catch (InvalidOperationException e) {
+            throw new BlueProtocolNetworkException("The TcpClient is not connected", e);
+        }
 
         this.OnDisconnectedEvent += OnRemoteDisconnected;
     }
 
 
+    /// <summary>
+    /// Connect to a remote host.
+    /// </summary>
+    /// <param name="host">The host to connect to.</param>
+    /// <param name="port">The port to connect to.</param>
+    /// <returns>The client connected to the remote host.</returns>
+    /// <exception cref="BlueProtocolNetworkException">Thrown when the host is null, the port is out of range or there is a socket error.</exception>
     public static AsyncClient Connect(string host, int port)
     {
         var client = new AsyncClient(host, port);
@@ -58,6 +90,12 @@ public class AsyncClient : IClient
     }
 
 
+    /// <summary>
+    /// Connect to a remote end point.
+    /// </summary>
+    /// <param name="remoteEndPoint">The remote end point to connect to.</param>
+    /// <returns>The client connected to the remote end point.</returns>
+    /// <exception cref="BlueProtocolNetworkException">Thrown when the host is null, the port is out of range or there is a socket error.</exception>
     public static AsyncClient Connect(IPEndPoint remoteEndPoint)
     {
         var client = new AsyncClient(remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
@@ -66,28 +104,35 @@ public class AsyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void Send(Request request)
     {
         if (request.IsWaitingForResponse()) {
-            request.Id = Guid.NewGuid().ToString();
+            request.RequestId = Guid.NewGuid().ToString();
             lock (this.requests)
                 this.requests.Add(request);
         }
 
         var message = Message.Create(request);
+
         try {
             message.Send(this.networkStream);
-        } catch (Exception e) when (e is IOException || e is ObjectDisposedException) { }
+        } catch (BlueProtocolNetworkException) {
+            OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
+        }
     }
 
 
+    /// <inheritdoc/>
     public void Send(Event ev)
     {
         var message = Message.Create(ev);
 
         try {
             message.Send(this.networkStream);
-        } catch (Exception e) when (e is IOException || e is ObjectDisposedException) { }
+        } catch (BlueProtocolNetworkException) {
+            OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
+        }
     }
 
 
@@ -97,7 +142,9 @@ public class AsyncClient : IClient
 
         try {
             message.Send(this.networkStream);
-        } catch (Exception e) when (e is IOException || e is ObjectDisposedException) { }
+        } catch (BlueProtocolNetworkException) {
+            OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
+        }
     }
 
 
@@ -131,7 +178,7 @@ public class AsyncClient : IClient
     private void UpdateResponse(Response response)
     {
         lock (this.requests) {
-            var request = this.requests.Items.Find(x => x.Id == response.RequestId);
+            var request = this.requests.Items.Find(x => x.RequestId == response.RequestId);
             if (request == null)
                 throw new BlueProtocolControllerException($"Request {response.RequestId} not found");
 
@@ -224,6 +271,7 @@ public class AsyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void AddController(Controller controller)
     {
         controller.Build();
@@ -240,6 +288,7 @@ public class AsyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void Dispose(DisconnectEvent disconnectEvent)
     {
         if (!this.IsConnected) return;
@@ -253,6 +302,7 @@ public class AsyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         var ev = new DisconnectEvent("Client disconnected");

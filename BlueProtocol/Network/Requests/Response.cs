@@ -34,7 +34,7 @@ public class Response
 
     internal Response(Request request, int code, string message)
     {
-        this.RequestId = request.Id;
+        this.RequestId = request.RequestId;
         this.Code = code;
         this.Message = message;
     }

@@ -6,6 +6,10 @@ using BlueProtocol.Controllers;
 namespace BlueProtocol.Network;
 
 
+/// <summary>
+/// The <c>AsyncServer</c> class models a server that listens for incoming connections.
+/// It only works with <c>AsyncClient</c> instances.
+/// </summary>
 public class AsyncServer : IServer
 {
     // ReSharper disable once UnassignedField.Global
@@ -20,18 +24,29 @@ public class AsyncServer : IServer
     public IPEndPoint LocalEndPoint => (IPEndPoint)this.tcpListener.LocalEndpoint;
 
 
+    /// <summary>
+    /// Create a new instance of <c>AsyncServer</c> with the default local end point.
+    /// It listens on the loopback address and a random port.
+    /// </summary>
     public AsyncServer()
     {
-        this.tcpListener = new TcpListener(IPAddress.Loopback, 0);
+        this.tcpListener = new TcpListener(IPAddress.Any, 0);
     }
 
 
+    /// <summary>
+    /// Create a new instance of <c>AsyncServer</c> with the specified port.
+    /// It listens on any address and the specified port.
+    /// </summary>
+    /// <param name="port">The port to listen on.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the port is out of range.</exception>
     public AsyncServer(int port)
     {
         this.tcpListener = new TcpListener(IPAddress.Any, port);
     }
 
 
+    /// <inheritdoc/>
     public void Start()
     {
         this.tcpListener.Start();
@@ -39,6 +54,7 @@ public class AsyncServer : IServer
     }
 
 
+    /// <inheritdoc/>
     public void AddController(Controller controller)
     {
         lock (this.controllers)
@@ -63,19 +79,24 @@ public class AsyncServer : IServer
     }
 
 
-    public IEnumerable<AsyncClient> GetClients()
+    /// <summary>
+    /// Get all the <c>AsyncClient</c> instances connected to the server.
+    /// </summary>
+    public List<AsyncClient> GetClients()
     {
         lock (this.clients)
-            return this.clients.ToArray();
+            return [..this.clients];
     }
 
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         this.tcpListener.Stop();
     }
 
 
+    /// <inheritdoc/>
     public IClient Connect(IPEndPoint remoteEndPoint)
     {
         var client = AsyncClient.Connect(remoteEndPoint);

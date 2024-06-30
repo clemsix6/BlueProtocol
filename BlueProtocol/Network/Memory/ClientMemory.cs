@@ -1,7 +1,7 @@
 ﻿namespace BlueProtocol.Network;
 
 
-public class ClientMemory<T>
+internal class ClientMemory<T>
 {
     private readonly Dictionary<T, DateTime> timedMemory = new();
 
@@ -31,14 +31,13 @@ public class ClientMemory<T>
     {
         var result = new List<T>();
 
-        lock (this.timedMemory)
-        {
-            foreach (var pair in this.timedMemory)
-            {
+        lock (this.timedMemory) {
+            foreach (var pair in this.timedMemory) {
                 if ((DateTime.Now - pair.Value).TotalSeconds >= seconds)
                     result.Add(pair.Key);
             }
         }
+
         return result;
     }
 }

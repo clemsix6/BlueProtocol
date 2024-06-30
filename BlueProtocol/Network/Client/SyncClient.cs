@@ -11,7 +11,8 @@ namespace BlueProtocol.Network;
 
 
 /// <summary>
-/// Class <c>Client</c> models all the logic for a client, it includes the connection and the communication.
+/// Class <c>SyncClient</c> models all the logic for a client, it includes the connection and the communication.
+/// It processes all the messages in the same thread by calling the <c>Update</c> method.
 /// </summary>
 public class SyncClient : IClient
 {
@@ -20,6 +21,7 @@ public class SyncClient : IClient
     // ReSharper disable once MemberCanBePrivate.Global
     public Action<SyncClient, DisconnectEvent> OnDisconnectedEvent;
 
+    /// <inheritdoc/>
     public int Timeout { get; set; } = 5000;
 
     private readonly TcpClient tcpClient;
@@ -29,8 +31,14 @@ public class SyncClient : IClient
     private readonly ClientMemory<Controller> controllers = new();
     private readonly ClientMemory<Request> requests = new();
 
+    /// <inheritdoc/>
     public bool IsConnected { get; private set; }
+
+    /// <inheritdoc/>
     public IPEndPoint RemoteEndPoint => (IPEndPoint)this.tcpClient.Client.RemoteEndPoint;
+
+    /// <inheritdoc/>
+    public IPEndPoint LocalEndPoint => (IPEndPoint)this.tcpClient.Client.LocalEndPoint;
 
 
     internal SyncClient(TcpClient tcpClient)
@@ -51,6 +59,13 @@ public class SyncClient : IClient
     }
 
 
+    /// <summary>
+    /// Connect to a remote host.
+    /// </summary>
+    /// <param name="host">The host to connect to.</param>
+    /// <param name="port">The port to connect to.</param>
+    /// <returns>The client connected to the remote host.</returns>
+    /// <exception cref="BlueProtocolNetworkException">Thrown when the host is null, the port is out of range or there is a socket error.</exception>
     public static SyncClient Connect(string host, int port)
     {
         var client = new SyncClient(host, port);
@@ -59,6 +74,12 @@ public class SyncClient : IClient
     }
 
 
+    /// <summary>
+    /// Connect to a remote end point.
+    /// </summary>
+    /// <param name="remoteEndPoint">The remote end point to connect to.</param>
+    /// <returns>The client connected to the remote end point.</returns>
+    /// <exception cref="BlueProtocolNetworkException">Thrown when the host is null, the port is out of range or there is a socket error.</exception>
     public static SyncClient Connect(IPEndPoint remoteEndPoint)
     {
         var client = new SyncClient(remoteEndPoint.Address.ToString(), remoteEndPoint.Port);
@@ -67,28 +88,34 @@ public class SyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void Send(Request request)
     {
         if (request.IsWaitingForResponse()) {
-            request.Id = Guid.NewGuid().ToString();
+            request.RequestId = Guid.NewGuid().ToString();
             lock (this.requests)
                 this.requests.Add(request);
         }
 
         var message = Message.Create(request);
+
         try {
             message.Send(this.networkStream);
-        } catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException) { }
+        } catch (BlueProtocolNetworkException) {
+            OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
+        }
     }
 
 
+    /// <inheritdoc/>
     public void Send(Event ev)
     {
         var message = Message.Create(ev);
-
         try {
             message.Send(this.networkStream);
-        } catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException) { }
+        } catch (BlueProtocolNetworkException) {
+            OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
+        }
     }
 
 
@@ -98,7 +125,9 @@ public class SyncClient : IClient
 
         try {
             message.Send(this.networkStream);
-        } catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException) { }
+        } catch (BlueProtocolNetworkException) {
+            OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
+        }
     }
 
 
@@ -167,6 +196,7 @@ public class SyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void AddController(Controller controller)
     {
         controller.Build();
@@ -193,7 +223,7 @@ public class SyncClient : IClient
     private void UpdateResponse(Response response)
     {
         lock (this.requests) {
-            var request = this.requests.Items.Find(x => x.Id == response.RequestId);
+            var request = this.requests.Items.Find(x => x.RequestId == response.RequestId);
             if (request == null)
                 throw new BlueProtocolControllerException($"Request {response.RequestId} not found");
 
@@ -216,6 +246,10 @@ public class SyncClient : IClient
     }
 
 
+    /// <summary>
+    /// Process all waiting requests, responses and events in the same thread.
+    /// </summary>
+    /// <exception cref="BlueProtocolControllerException"></exception>
     public void Update()
     {
         var messages = this.messages.DequeueAll();
@@ -246,6 +280,7 @@ public class SyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void Dispose(DisconnectEvent disconnectEvent)
     {
         Send(disconnectEvent);
@@ -257,6 +292,7 @@ public class SyncClient : IClient
     }
 
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         var ev = new DisconnectEvent("Client disconnected");

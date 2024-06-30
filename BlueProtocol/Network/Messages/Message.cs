@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace BlueProtocol.Network.Messages;
 
 
-public class Message
+internal class Message
 {
     private string Type { get; }
     private string Body { get; }
@@ -53,8 +53,16 @@ public class Message
         var bytes = Encoding.UTF8.GetBytes(data);
         var header = BitConverter.GetBytes(bytes.Length);
 
-        stream.Write(header, 0, header.Length);
-        stream.Write(bytes, 0, bytes.Length);
+        try {
+            stream.Write(header, 0, header.Length);
+            stream.Write(bytes, 0, bytes.Length);
+        } catch (ObjectDisposedException e) {
+            throw new BlueProtocolConnectionClosed("The NetworkStream is closed.", e);
+        } catch (InvalidOperationException e) {
+            throw new BlueProtocolNetworkException("The NetworkStream is not writable.", e);
+        } catch (IOException e) {
+            throw new BlueProtocolConnectionClosed("An I/O error occurred while writing to the NetworkStream.", e);
+        }
     }
 
 

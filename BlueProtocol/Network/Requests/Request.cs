@@ -6,7 +6,7 @@ namespace BlueProtocol.Network.Requests;
 
 public class Request
 {
-    [JsonProperty] public string Id { get; internal set; }
+    [JsonProperty] internal string RequestId { get; set; }
     [JsonIgnore] private List<Action<Response>> OnResponseEvent { get; } = [];
 
 
