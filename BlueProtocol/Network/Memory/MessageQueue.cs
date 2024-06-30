@@ -3,7 +3,7 @@
 
 public class MessageQueue
 {
-    private readonly List<object> messages = new();
+    private readonly List<object> messages = [];
 
 
     public void Enqueue(object message)

@@ -197,7 +197,7 @@ public class AsyncClient : IClient
     private void UpdateTimeout()
     {
         lock (this.requests) {
-            if (this.requests.GetTimedOutItems(this.Timeout).Any()) {
+            if (this.requests.GetTimedOutItems(this.Timeout).Count != 0) {
                 var ev = new DisconnectEvent("Timeout");
                 Dispose(ev);
                 throw new BlueProtocolTimeoutException("Request timed out");
