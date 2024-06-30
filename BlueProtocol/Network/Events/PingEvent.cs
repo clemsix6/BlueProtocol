@@ -1,7 +1,7 @@
-﻿namespace BlueProtocol.Network.Events
+﻿namespace BlueProtocol.Network.Events;
+
+
+public class PingEvent : Event
 {
-    public class PingEvent : Event
-    {
         
-    }
 }

@@ -1,16 +1,16 @@
 ﻿using System.Net;
-using BlueProtocol.Requests;
+using BlueProtocol.Controllers;
 
 
-namespace BlueProtocol.Network
+namespace BlueProtocol.Network;
+
+
+public interface IServer : IDisposable
 {
-    public interface IServer : IDisposable
-    {
-        bool IsRunning { get; }
-        IPEndPoint LocalEndPoint { get; }
+    bool IsRunning { get; }
+    IPEndPoint LocalEndPoint { get; }
 
-        void Start();
-        void AddController(Controller controller);
-        IClient Connect(IPEndPoint remoteEndPoint);
-    }
+    void Start();
+    void AddController(Controller controller);
+    IClient Connect(IPEndPoint remoteEndPoint);
 }

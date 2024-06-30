@@ -1,7 +1,7 @@
-﻿namespace BlueProtocol.Exceptions
+﻿namespace BlueProtocol.Exceptions;
+
+
+public class BlueProtocolTimeoutException : BlueProtocolException
 {
-    public class BlueProtocolTimeoutException : BlueProtocolException
-    {
-        public BlueProtocolTimeoutException(string message) : base(message) { }
-    }
+    public BlueProtocolTimeoutException(string message) : base(message) { }
 }

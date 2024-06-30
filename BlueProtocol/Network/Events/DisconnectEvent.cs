@@ -1,13 +1,14 @@
-﻿namespace BlueProtocol.Network.Events
+﻿namespace BlueProtocol.Network.Events;
+
+
+public class DisconnectEvent : Event
 {
-    public class DisconnectEvent : Event
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
+    public string Reason { get; }
+
+
+    public DisconnectEvent(string reason)
     {
-        public string Reason { get; }
-
-
-        public DisconnectEvent(string reason)
-        {
-            this.Reason = reason;
-        }
+        this.Reason = reason;
     }
 }
