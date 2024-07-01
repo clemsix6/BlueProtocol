@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using BlueProtocol.Controllers;
+using BlueProtocol.Network.Events;
 
 
 namespace BlueProtocol.Network;
@@ -16,11 +17,18 @@ public class AsyncServer : IServer
     // ReSharper disable once InconsistentNaming
     public Action<AsyncClient> OnClientConnectedEvent;
 
+    // ReSharper disable once UnassignedField.Global
+    // ReSharper disable once InconsistentNaming
+    public Action<AsyncClient, DisconnectEvent> OnClientDisconnectedEvent;
+
     private readonly TcpListener tcpListener;
     private readonly List<AsyncClient> clients = [];
     private readonly List<Controller> controllers = [];
 
+    /// <inheritdoc/>
     public bool IsRunning => this.tcpListener.Server.IsBound;
+
+    /// <inheritdoc/>
     public IPEndPoint LocalEndPoint => (IPEndPoint)this.tcpListener.LocalEndpoint;
 
 
@@ -61,6 +69,19 @@ public class AsyncServer : IServer
             this.controllers.Add(controller);
     }
 
+    private void AddClient(AsyncClient client)
+    {
+        lock (this.clients)
+            this.clients.Add(client);
+        client.Start();
+
+        client.OnDisconnectedEvent += (c, e) => {
+            lock (this.clients)
+                this.clients.Remove(c);
+            this.OnClientDisconnectedEvent?.Invoke(c, e);
+        };
+    }
+
 
     private void OnClientConnected(IAsyncResult result)
     {
@@ -70,10 +91,8 @@ public class AsyncServer : IServer
 
             var client = new AsyncClient(tcpClient);
             lock (this.controllers) this.controllers.ForEach(x => client.AddController(x));
-            client.Start();
+            AddClient(client);
 
-            lock (this.clients)
-                this.clients.Add(client);
             this.OnClientConnectedEvent?.Invoke(client);
         } catch (ObjectDisposedException) { }
     }
@@ -100,8 +119,8 @@ public class AsyncServer : IServer
     public IClient Connect(IPEndPoint remoteEndPoint)
     {
         var client = AsyncClient.Connect(remoteEndPoint);
-        lock (this.clients)
-            this.clients.Add(client);
+        AddClient(client);
+
         lock (this.controllers)
             this.controllers.ForEach(x => client.AddController(x));
         this.OnClientConnectedEvent?.Invoke(client);

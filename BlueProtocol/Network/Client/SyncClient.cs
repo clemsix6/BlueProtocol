@@ -202,6 +202,8 @@ public class SyncClient : IClient
 
     internal void Start()
     {
+        if (this.IsConnected)
+            return;
         this.IsConnected = true;
         new Thread(ReceiveLoop).Start();
         new Thread(MainLoop).Start();
@@ -288,6 +290,8 @@ public class SyncClient : IClient
     {
         this.IsConnected = false;
         this.tcpClient.Dispose();
+
+        // ReSharper disable once InconsistentlySynchronizedField
         this.networkStream.Dispose();
     }
 
@@ -299,6 +303,8 @@ public class SyncClient : IClient
         this.OnDisconnectedEvent?.Invoke(this, disconnectEvent);
 
         this.IsConnected = false;
+
+        // ReSharper disable once InconsistentlySynchronizedField
         this.networkStream.Dispose();
         this.tcpClient.Dispose();
     }
