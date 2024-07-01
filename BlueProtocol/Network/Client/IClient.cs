@@ -19,7 +19,19 @@ public interface IClient : IDisposable
     /// <summary>
     /// Get the time maximum for the client to wait for a response.
     /// </summary>
-    int Timeout { get; set; }
+    int ResponseTimeout { get; set; }
+
+
+    /// <summary>
+    /// Get the time when the client connected to the remote host.
+    /// </summary>
+    DateTime ConnectionTime { get; }
+
+
+    /// <summary>
+    /// Get the time when the client received the last response.
+    /// </summary>
+    DateTime LastResponseTime { get; }
 
 
     /// <summary>

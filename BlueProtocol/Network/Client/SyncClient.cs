@@ -22,7 +22,7 @@ public class SyncClient : IClient
     public Action<SyncClient, DisconnectEvent> OnDisconnectedEvent;
 
     /// <inheritdoc/>
-    public int Timeout { get; set; } = 5000;
+    public int ResponseTimeout { get; set; } = 5000;
 
     private readonly TcpClient tcpClient;
     private readonly NetworkStream networkStream;
@@ -39,6 +39,12 @@ public class SyncClient : IClient
 
     /// <inheritdoc/>
     public IPEndPoint LocalEndPoint => (IPEndPoint)this.tcpClient.Client.LocalEndPoint;
+
+    /// <inheritdoc/>
+    public DateTime ConnectionTime { get; } = DateTime.Now;
+
+    /// <inheritdoc/>
+    public DateTime LastResponseTime { get; private set; } = DateTime.Now;
 
 
     internal SyncClient(TcpClient tcpClient)
@@ -100,7 +106,8 @@ public class SyncClient : IClient
         var message = Message.Create(request);
 
         try {
-            message.Send(this.networkStream);
+            lock (this.networkStream)
+                message.Send(this.networkStream);
         } catch (BlueProtocolNetworkException) {
             OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
         }
@@ -112,7 +119,8 @@ public class SyncClient : IClient
     {
         var message = Message.Create(ev);
         try {
-            message.Send(this.networkStream);
+            lock (this.networkStream)
+                message.Send(this.networkStream);
         } catch (BlueProtocolNetworkException) {
             OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
         }
@@ -124,7 +132,8 @@ public class SyncClient : IClient
         var message = Message.Create(data);
 
         try {
-            message.Send(this.networkStream);
+            lock (this.networkStream)
+                message.Send(this.networkStream);
         } catch (BlueProtocolNetworkException) {
             OnDisconnectedEvent.Invoke(this, new DisconnectEvent("Connection closed"));
         }
@@ -134,6 +143,7 @@ public class SyncClient : IClient
     private object ReceiveData()
     {
         try {
+            // ReSharper disable once InconsistentlySynchronizedField
             var message = Message.Receive(this.networkStream);
             return message.Deserialize();
         } catch (Exception ex) when (ex is IOException || ex is ObjectDisposedException) {
@@ -147,6 +157,8 @@ public class SyncClient : IClient
         while (this.IsConnected) {
             var data = ReceiveData();
             if (data == null) continue;
+
+            this.LastResponseTime = DateTime.Now;
 
             if (data is DisconnectEvent ev) {
                 this.IsConnected = false;
@@ -169,7 +181,7 @@ public class SyncClient : IClient
     private void UpdateTimeout()
     {
         lock (this.requests) {
-            if (this.requests.GetTimedOutItems(this.Timeout).Count != 0) {
+            if (this.requests.GetTimedOutItems(this.ResponseTimeout).Count != 0) {
                 var ev = new DisconnectEvent("Timeout");
                 Dispose(ev);
                 throw new BlueProtocolTimeoutException("Request timed out");
