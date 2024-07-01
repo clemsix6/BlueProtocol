@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SimpleRepeat")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9cc9cb62d4b5853bae8c14f6197f4928c1eceb9d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+205a287751ae67449783744d846787cac25e5f70")]
 [assembly: System.Reflection.AssemblyProductAttribute("SimpleRepeat")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SimpleRepeat")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
