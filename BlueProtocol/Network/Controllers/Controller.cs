@@ -41,7 +41,7 @@ public class Controller
         Type clientType = null;
         Type inputType = null;
         foreach (var parameter in parameters) {
-            if (typeof(IClient).IsAssignableFrom(parameter.ParameterType)) {
+            if (typeof(BlueClient).IsAssignableFrom(parameter.ParameterType)) {
                 if (clientType != null)
                     throw new BlueProtocolControllerException(
                         $"The method {method.Name} in {type} has multiple IClient parameters");
@@ -90,7 +90,7 @@ public class Controller
         Type clientType = null;
         Type inputType = null;
         foreach (var parameter in parameters) {
-            if (typeof(IClient).IsAssignableFrom(parameter.ParameterType)) {
+            if (typeof(BlueClient).IsAssignableFrom(parameter.ParameterType)) {
                 if (clientType != null)
                     throw new BlueProtocolControllerException(
                         $"The method {method.Name} in {type} has multiple IClient parameters");
@@ -142,7 +142,7 @@ public class Controller
     }
 
 
-    internal bool OnRequest(IClient client, Request input, out object output)
+    internal bool OnRequest(BlueClient client, Request input, out object output)
     {
         output = null;
         var request = this.requests.Find(x => x.InputType == input.GetType());
@@ -156,7 +156,7 @@ public class Controller
     }
 
 
-    internal bool OnEvent(IClient client, Event input)
+    internal bool OnEvent(BlueClient client, Event input)
     {
         var e = this.events.Find(x => x.InputType == input.GetType());
         if (e == null) return false;

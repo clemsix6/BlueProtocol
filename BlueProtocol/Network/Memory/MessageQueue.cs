@@ -23,4 +23,17 @@ internal class MessageQueue
         }
         return messages;
     }
+
+
+    public object Dequeue()
+    {
+        object message;
+        lock(this.messages) {
+            if (this.messages.Count == 0)
+                return null;
+            message = this.messages[0];
+            this.messages.RemoveAt(0);
+        }
+        return message;
+    }
 }

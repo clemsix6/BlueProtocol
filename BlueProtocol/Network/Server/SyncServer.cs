@@ -13,16 +13,18 @@ namespace BlueProtocol.Network;
 /// </summary>
 public class SyncServer : IServer
 {
-    // ReSharper disable once UnassignedField.Global
-    // ReSharper disable once InconsistentNaming
-    public Action<SyncClient> OnClientConnectedEvent;
+    /// <summary>
+    /// Event that is triggered when a client connects to the server.
+    /// </summary>
+    public event Action<SyncClient> OnClientConnectedEvent;
 
-    // ReSharper disable once UnassignedField.Global
-    // ReSharper disable once InconsistentNaming
-    public Action<SyncClient, DisconnectEvent> OnClientDisconnectedEvent;
+    /// <summary>
+    /// Event that is triggered when a client disconnects from the server.
+    /// </summary>
+    public event Action<SyncClient> OnClientDisconnectedEvent;
+
 
     private readonly TcpListener tcpListener;
-    private readonly List<SyncClient> clients = [];
     private readonly List<Controller> controllers = [];
 
     /// <inheritdoc/>
@@ -70,16 +72,13 @@ public class SyncServer : IServer
     }
 
 
-    private void AddClient(SyncClient client)
+    private void RunClient(SyncClient client)
     {
-        lock (this.clients)
-            this.clients.Add(client);
         client.Start();
 
-        client.OnDisconnectedEvent += (c, e) => {
-            lock (this.clients)
-                this.clients.Remove(c);
-            this.OnClientDisconnectedEvent?.Invoke(c, e);
+        client.OnDisconnectedEvent += c => {
+            var syncClient = (SyncClient)c;
+            this.OnClientDisconnectedEvent?.Invoke(syncClient);
         };
     }
 
@@ -92,20 +91,10 @@ public class SyncServer : IServer
 
             var client = new SyncClient(tcpClient);
             lock (this.controllers) this.controllers.ForEach(x => client.AddController(x));
-            AddClient(client);
+            RunClient(client);
 
             this.OnClientConnectedEvent?.Invoke(client);
         } catch (ObjectDisposedException) { }
-    }
-
-
-    /// <summary>
-    /// Get all the <c>SyncClient</c> instances connected to the server.
-    /// </summary>
-    public List<SyncClient> GetClients()
-    {
-        lock (this.clients)
-            return [..this.clients];
     }
 
 
@@ -117,11 +106,11 @@ public class SyncServer : IServer
 
 
     /// <inheritdoc/>
-    public IClient Connect(IPEndPoint remoteEndPoint)
+    public BlueClient Connect(IPEndPoint remoteEndPoint)
     {
-        var client = SyncClient.Connect(remoteEndPoint);
-        AddClient(client);
-        lock(this.controllers)
+        var client = SyncClient.Create(remoteEndPoint);
+        RunClient(client);
+        lock (this.controllers)
             this.controllers.ForEach(x => client.AddController(x));
         this.OnClientConnectedEvent?.Invoke(client);
         return client;

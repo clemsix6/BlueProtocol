@@ -1,4 +1,4 @@
-# SimpleRepeat Technical Documentation
+# SimpleRepeat Documentation
 
 ## 📄 Introduction
 **SimpleRepeat** demonstrates the use of the **BlueProtocol** library for TCP communication between multiple "bots".

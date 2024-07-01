@@ -1,7 +1,7 @@
 ﻿namespace BlueProtocol.Network;
 
 
-internal class ClientMemory<T>
+public class ClientMemory<T>
 {
     private readonly Dictionary<T, DateTime> timedMemory = new();
 

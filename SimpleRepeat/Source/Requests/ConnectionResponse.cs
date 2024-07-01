@@ -7,5 +7,5 @@ namespace SimpleRepeat.Requests;
 public class ConnectionResponse : Response
 {
     public required bool Authorized { get; init; }
-    public required string Id { get; init; }
+    public required int Port { get; init; }
 }

@@ -6,6 +6,6 @@ namespace SimpleRepeat.Requests;
 
 public class Message : Event
 {
-    public required string SenderId { get; init; }
+    public required int SenderPort { get; init; }
     public required string Content { get; init; }
 }

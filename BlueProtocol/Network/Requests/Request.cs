@@ -17,14 +17,18 @@ public class Request
     }
 
 
-    internal bool IsWaitingForResponse()
-    {
-        return OnResponseEvent.Count > 0;
-    }
-
-
     public void OnResponse(Action<Response> action)
     {
         OnResponseEvent.Add(action);
+    }
+
+
+    public void Wait()
+    {
+        var received = false;
+        OnResponseEvent.Add(_ => received = true);
+
+        while (!received)
+            Thread.Sleep(1);
     }
 }

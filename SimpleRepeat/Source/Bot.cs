@@ -10,26 +10,25 @@ namespace SimpleRepeat;
 
 public class Bot : Controller
 {
-    private readonly string id;
     private readonly int port;
     private readonly ConsoleColor color;
     private readonly string[] sentences;
     private readonly Semaphore outputSemaphore;
 
-    private readonly Dictionary<string, AsyncClient> clients;
+    private readonly Dictionary<int, AsyncClient> clients;
     private readonly AsyncServer server;
+
     public Thread Thread { get; }
 
 
-    public Bot(string id, int port, ConsoleColor color, string[] sentences, Semaphore outputSemaphore)
+    public Bot(int port, ConsoleColor color, string[] sentences, Semaphore outputSemaphore)
     {
-        this.id = id;
         this.port = port;
         this.color = color;
         this.sentences = sentences;
         this.outputSemaphore = outputSemaphore;
 
-        this.clients = new Dictionary<string, AsyncClient>();
+        this.clients = new Dictionary<int, AsyncClient>();
         this.server = new AsyncServer(port);
         this.Thread = new Thread(this.Loop);
 
@@ -39,13 +38,15 @@ public class Bot : Controller
 
     private void Print(string prefix, string message)
     {
+        /*
         // Use the semaphore to control access to the console output
         this.outputSemaphore.WaitOne();
         Console.Write(prefix);
         Console.ForegroundColor = this.color;
-        Console.WriteLine($"[{this.id}] {message}");
+        Console.WriteLine($"[{this.port}] {message}");
         Console.ResetColor();
         this.outputSemaphore.Release();
+        */
     }
 
 
@@ -53,17 +54,18 @@ public class Bot : Controller
     {
         var searchingPort = Config.StartingPort - 1;
 
-        while (true) {
+        while (searchingPort < Config.StartingPort + Config.BotCount - 1) {
             searchingPort++;
-            if (searchingPort == this.port)
+            if (searchingPort == this.port || this.clients.ContainsKey(searchingPort))
                 continue;
+            Print("! ", $"Searching for [{searchingPort}]");
 
             try {
                 // Connect to the server on the searching port
                 var client = (AsyncClient)this.server.Connect(new IPEndPoint(IPAddress.Loopback, searchingPort));
 
                 // Create the connection request
-                var connectionRequest = new ConnectionRequest { Id = this.id };
+                var connectionRequest = new ConnectionRequest { Port = this.port };
                 // Set the response handler
                 connectionRequest.OnResponse(response => {
                     // Cast the response to a connection response
@@ -77,9 +79,9 @@ public class Bot : Controller
 
                     // Add the client to the list of clients
                     lock (this.clients)
-                        this.clients.Add(connectionResponse.Id, client);
+                        this.clients.Add(connectionResponse.Port, client);
 
-                    this.Print("[+] ", "Connection authorized by " + connectionResponse.Id);
+                    this.Print("[+] ", $"Connection authorized by [{connectionResponse.Port}]");
                 });
 
                 // Send the connection request
@@ -98,56 +100,72 @@ public class Bot : Controller
         this.server.Start();
         this.Thread.Start();
 
-        this.Print("! ", "Started on port " + this.port);
+        this.Print("! ", "Started");
     }
 
 
     private void SendRandomMessage()
     {
         var message = new Message {
-            SenderId = this.id,
+            SenderPort = this.port,
             Content = this.sentences[Random.Shared.Next(this.sentences.Length)],
         };
-        var clients = this.server.GetClients();
 
-        Print("> ", $"Sending message: {message.Content}");
-        foreach (var client in clients)
-            client.Send(message);
+        lock (this.clients) {
+            foreach (var client in this.clients) {
+                Print("> ", $"Sending message: {message.Content} to [{client.Key}]");
+                client.Value.Send(message);
+            }
+        }
     }
 
 
     private void Loop()
     {
-        var startTime = DateTime.Now;
+        var nextSearchTime = Environment.TickCount64 + 1000;
+        var nextSendMessageTime = Environment.TickCount64 + 1000;
 
-        while ((DateTime.Now - startTime).TotalMilliseconds < Config.SimulationDuration) {
-            Thread.Sleep(Random.Shared.Next(3000, 5000));
-            Search();
+        while (true) {
+            Thread.Sleep(Random.Shared.Next(50, 100));
 
-            if ((DateTime.Now - startTime).TotalMilliseconds > 5000)
+            lock (this.clients) {
+                if (Environment.TickCount64 >= nextSearchTime && this.clients.Count < Config.BotCount &&
+                    this.port == Config.StartingPort) {
+                    nextSearchTime = Environment.TickCount64 + Random.Shared.Next(1000, 3000);
+                    Search();
+                }
+            }
+
+            if (Environment.TickCount64 >= nextSendMessageTime) {
+                nextSendMessageTime = Environment.TickCount64 + Random.Shared.Next(1000, 10000);
                 SendRandomMessage();
+            }
         }
     }
 
 
-
     // --- Event handlers ---
 
+
     [OnEvent]
-    public void OnReceiveMessage(Message message)
+    private void OnReceiveMessage(Message message)
     {
-        Print("< ", $"Received message from {message.SenderId}: {message.Content}");
+        Print("< ", $"Received message from {message.SenderPort}: {message.Content}");
     }
 
 
     [OnRequest]
-    public ConnectionResponse OnConnectionRequest(AsyncClient client, ConnectionRequest request)
+    private ConnectionResponse OnConnectionRequest(AsyncClient client, ConnectionRequest request)
     {
         lock (this.clients) {
-            var authorized = this.clients.TryAdd(request.Id, client);
-            if (authorized)
-                Print("[+] ", "Connection authorized for " + request.Id);
-            return new ConnectionResponse { Authorized = authorized, Id = this.id };
+            if (!this.clients.TryAdd(request.Port, client)) {
+                Print("[!] ", $"Connection refused for [{request.Port}]");
+                client.Dispose();
+                return new ConnectionResponse { Authorized = false, Port = this.port };
+            }
+
+            Print("[+] ", $"Connection authorized for [{request.Port}]");
+            return new ConnectionResponse { Authorized = true, Port = this.port };
         }
     }
 }

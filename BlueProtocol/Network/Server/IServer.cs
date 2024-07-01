@@ -40,5 +40,5 @@ public interface IServer : IDisposable
     /// <param name="remoteEndPoint">The remote end point to connect to.</param>
     /// <returns>The client connected to the remote end point.</returns>
     /// <exception cref="BlueProtocolNetworkException">Thrown when the host is null,the port is out of range or there is a socket error.</exception>
-    IClient Connect(IPEndPoint remoteEndPoint);
+    BlueClient Connect(IPEndPoint remoteEndPoint);
 }

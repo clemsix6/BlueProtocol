@@ -6,5 +6,5 @@ namespace SimpleRepeat.Requests;
 
 public class ConnectionRequest : Request
 {
-    public required string Id { get; init; }
+    public required int Port { get; init; }
 }

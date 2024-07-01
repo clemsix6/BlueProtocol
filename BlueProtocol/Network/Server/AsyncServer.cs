@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using BlueProtocol.Controllers;
-using BlueProtocol.Network.Events;
 
 
 namespace BlueProtocol.Network;
@@ -13,16 +12,18 @@ namespace BlueProtocol.Network;
 /// </summary>
 public class AsyncServer : IServer
 {
-    // ReSharper disable once UnassignedField.Global
-    // ReSharper disable once InconsistentNaming
-    public Action<AsyncClient> OnClientConnectedEvent;
+    /// <summary>
+    /// Event that is triggered when a client connects to the server.
+    /// </summary>
+    public event Action<AsyncClient> OnClientConnectedEvent;
 
-    // ReSharper disable once UnassignedField.Global
-    // ReSharper disable once InconsistentNaming
-    public Action<AsyncClient, DisconnectEvent> OnClientDisconnectedEvent;
+    /// <summary>
+    /// Event that is triggered when a client disconnects from the server.
+    /// </summary>
+    public event Action<AsyncClient> OnClientDisconnectedEvent;
+
 
     private readonly TcpListener tcpListener;
-    private readonly List<AsyncClient> clients = [];
     private readonly List<Controller> controllers = [];
 
     /// <inheritdoc/>
@@ -69,16 +70,14 @@ public class AsyncServer : IServer
             this.controllers.Add(controller);
     }
 
-    private void AddClient(AsyncClient client)
+
+    private void RunClient(AsyncClient client)
     {
-        lock (this.clients)
-            this.clients.Add(client);
         client.Start();
 
-        client.OnDisconnectedEvent += (c, e) => {
-            lock (this.clients)
-                this.clients.Remove(c);
-            this.OnClientDisconnectedEvent?.Invoke(c, e);
+        client.OnDisconnectedEvent += c => {
+            var asyncClient = (AsyncClient)c;
+            this.OnClientDisconnectedEvent?.Invoke(asyncClient);
         };
     }
 
@@ -91,20 +90,10 @@ public class AsyncServer : IServer
 
             var client = new AsyncClient(tcpClient);
             lock (this.controllers) this.controllers.ForEach(x => client.AddController(x));
-            AddClient(client);
+            RunClient(client);
 
             this.OnClientConnectedEvent?.Invoke(client);
-        } catch (ObjectDisposedException) { }
-    }
-
-
-    /// <summary>
-    /// Get all the <c>AsyncClient</c> instances connected to the server.
-    /// </summary>
-    public List<AsyncClient> GetClients()
-    {
-        lock (this.clients)
-            return [..this.clients];
+        } catch (SocketException) { }
     }
 
 
@@ -112,14 +101,15 @@ public class AsyncServer : IServer
     public void Dispose()
     {
         this.tcpListener.Stop();
+        this.tcpListener.Server.Dispose();
     }
 
 
     /// <inheritdoc/>
-    public IClient Connect(IPEndPoint remoteEndPoint)
+    public BlueClient Connect(IPEndPoint remoteEndPoint)
     {
-        var client = AsyncClient.Connect(remoteEndPoint);
-        AddClient(client);
+        var client = AsyncClient.Create(remoteEndPoint);
+        RunClient(client);
 
         lock (this.controllers)
             this.controllers.ForEach(x => client.AddController(x));

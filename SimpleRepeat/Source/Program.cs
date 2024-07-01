@@ -24,14 +24,13 @@ internal static class Program
 
     private static List<Bot> CreateBots(int count, string[] sentences, Semaphore outputSemaphore)
     {
-        const string Ids = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         var bots = new List<Bot>();
 
         for (var i = 0; i < count; i++)
         {
-            var id = Ids[i].ToString();
-            var color = (ConsoleColor) (i % 16 + 1);
-            bots.Add(new Bot(id, Config.StartingPort + i, color, sentences, outputSemaphore));
+            var id = i.ToString("D2");
+            var color = (ConsoleColor) (i % 15 + 1);
+            bots.Add(new Bot(Config.StartingPort + i, color, sentences, outputSemaphore));
         }
 
         return bots;
