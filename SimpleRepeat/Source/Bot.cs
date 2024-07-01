@@ -39,6 +39,7 @@ public class Bot : Controller
 
     private void Print(string prefix, string message)
     {
+        // Use the semaphore to control access to the console output
         this.outputSemaphore.WaitOne();
         Console.Write(prefix);
         Console.ForegroundColor = this.color;
@@ -128,6 +129,9 @@ public class Bot : Controller
         }
     }
 
+
+
+    // --- Event handlers ---
 
     [OnEvent]
     public void OnReceiveMessage(Message message)

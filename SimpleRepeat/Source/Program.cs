@@ -12,7 +12,7 @@ internal static class Program
         var outputSemaphore = new Semaphore(1, 1);
 
         // Create a list of bots
-        var bots = CreateBots(3, sentences, outputSemaphore);
+        var bots = CreateBots(Config.BotCount, sentences, outputSemaphore);
 
         // Start the bots
         bots.ForEach(x => x.Start());

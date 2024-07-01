@@ -1,7 +1,9 @@
-# SimpleRepeat Project Documentation
+# SimpleRepeat Technical Documentation
 
 ## 📄 Introduction
-**SimpleRepeat** is a project demonstrating the use of the **BlueProtocol** library for TCP communication between multiple "bots". Each bot connects to a server, sends and receives messages, and synchronizes with other bots.
+**SimpleRepeat** demonstrates the use of the **BlueProtocol** library for TCP communication between multiple "bots".
+Each bot connects directly to other bots, sends and receives messages, and prints the received messages to the console
+via a port scan starting from the `StartingPort` defined in the configuration.
 
 ## 🔍 Overview
 1. **Read sentences**: Reads phrases from `sentences.txt`.
@@ -23,6 +25,7 @@
 - Contains configuration constants:
   - `StartingPort`: Initial port for bots (5060).
   - `SimulationDuration`: Simulation duration in milliseconds (60000 ms).
+  - `BotCount`: Number of bots (3).
 
 ### Class `Bot`
 - Inherits from `Controller`.
@@ -43,8 +46,31 @@
 - **ConnectionRequest**: Defines a connection request with an ID.
 - **ConnectionResponse**: Defines a connection response with authorization status and ID.
 
+## 🛠️ How It Works
+
+1. **Initialization**:
+  - `Program.Main` reads sentences and creates a semaphore for console output.
+  - Calls `CreateBots` to initialize bots with unique IDs, starting ports, colors, and sentences.
+
+2. **Bot Creation**:
+  - `CreateBots` initializes a list of `Bot` instances, each with a unique ID, port, color, and sentences.
+
+3. **Bot Start**:
+  - Each bot starts its server and begins its main loop in a separate thread.
+  - Bots attempt to connect to other bots via the `Search` method, sending a `ConnectionRequest`.
+  - Successful connections are added to the bot's list of clients.
+
+4. **Message Exchange**:
+  - Bots periodically send random messages from `sentences` to all connected clients.
+  - Received messages trigger the `OnReceiveMessage` handler, printing the message to the console.
+
+5. **Synchronization**:
+  - The `Print` method uses a semaphore to ensure synchronized console output, avoiding race conditions.
+
 ## 📊 Example Output
 ![Screenshot of the output](Screenshot.png)
 
 ## 🏁 Conclusion
-This project illustrates how to use **BlueProtocol** to establish bidirectional communication between multiple TCP instances, demonstrating connection handling, message management, and client-server synchronization.
+This project illustrates how to use **BlueProtocol** to establish peer-to-peer bidirectional 
+communication between multiple TCP instances, demonstrating connection handling, message management, 
+and console output of received messages.
