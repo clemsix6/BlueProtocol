@@ -30,13 +30,30 @@ public class Request
     /// <summary>
     /// Wait for a response.
     /// </summary>
-    public void Wait()
+    public Response WaitResult()
     {
-        var received = false;
-        OnResponseEvent.Add(_ => received = true);
+        Response response = null;
+        OnResponseEvent.Add(r => response = r);
 
-        while (!received)
+        while (response == null)
             Thread.Sleep(1);
+        return response;
+    }
+
+
+    /// <summary>
+    /// Wait for a response with a timeout.
+    /// </summary>
+    /// <typeparam name="T">The type of response to wait for.</typeparam>
+    /// <returns>Returns the response</returns>
+    public T WaitResult<T>() where T : Response
+    {
+        T response = null;
+        OnResponseEvent.Add(r => response = (T)r);
+
+        while (response == null)
+            Thread.Sleep(1);
+        return response;
     }
 
 
@@ -44,19 +61,33 @@ public class Request
     /// Wait for a response with a timeout.
     /// </summary>
     /// <param name="timeout">The timeout in milliseconds.</param>
-    /// <returns>True if the response was received, false otherwise.</returns>
-    public bool Wait(int timeout)
+    /// <returns>Returns the response or null if the timeout is reached.</returns>
+    public Response WaitResult(int timeout)
     {
-        var received = false;
-        OnResponseEvent.Add(_ => received = true);
+        Response response = null;
+        OnResponseEvent.Add(r => response = r);
 
         var start = Environment.TickCount64;
-        while (!received) {
-            if (Environment.TickCount64 - start >= timeout)
-                return false;
+        while (response == null && Environment.TickCount64 - start < timeout)
             Thread.Sleep(1);
-        }
+        return response;
+    }
 
-        return true;
+
+    /// <summary>
+    /// Wait for a response with a timeout.
+    /// </summary>
+    /// <param name="timeout">The timeout in milliseconds.</param>
+    /// <typeparam name="T">The type of response to wait for.</typeparam>
+    /// <returns>Returns the response or null if the timeout is reached.</returns>
+    public T WaitResult<T>(int timeout) where T : Response
+    {
+        T response = null;
+        OnResponseEvent.Add(r => response = (T)r);
+
+        var start = Environment.TickCount64;
+        while (response == null && Environment.TickCount64 - start < timeout)
+            Thread.Sleep(1);
+        return response;
     }
 }

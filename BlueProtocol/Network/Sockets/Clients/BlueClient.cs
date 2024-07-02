@@ -282,7 +282,7 @@ public abstract class BlueClient
 
         var closeRequest = new CloseRequest { Reason = reason };
         Send(closeRequest);
-        closeRequest.Wait(1000);
+        closeRequest.WaitResult(1000);
 
         this.tcpClient?.Dispose();
         lock (this.networkStream)
@@ -308,7 +308,7 @@ public abstract class BlueClient
 
         var closeRequest = new CloseRequest { Reason = reason };
         Send(closeRequest);
-        closeRequest.Wait(1000);
+        closeRequest.WaitResult(1000);
 
         this.tcpClient?.Dispose();
         lock (this.networkStream)

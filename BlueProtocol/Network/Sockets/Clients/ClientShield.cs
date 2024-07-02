@@ -11,13 +11,13 @@ public class ClientShield : ICloneable
     /// <summary>
     /// The maximum lifetime of the client in milliseconds.
     /// </summary>
-    public int LifeTime { get; init; } = -1;
+    public int LifeTime { get; set; } = -1;
     internal long StartTime { get; set; }
 
     /// <summary>
     /// The maximum time to wait for a response in milliseconds.
     /// </summary>
-    public int ResponseTimeout { get; init; } = 5000;
+    public int ResponseTimeout { get; set; } = 5000;
 
 
     // Rate limits
@@ -25,13 +25,13 @@ public class ClientShield : ICloneable
     /// <summary>
     /// The maximum number of requests per second.
     /// </summary>
-    public int MaxRequestsPerSecond { get; init; } = 10;
+    public int MaxRequestsPerSecond { get; set; } = 10;
     internal List<long> RequestTimesSecond { get; } = [];
 
     /// <summary>
     /// The maximum number of requests per minute.
     /// </summary>
-    public int MaxRequestsPerMinute { get; init; } = 600;
+    public int MaxRequestsPerMinute { get; set; } = 600;
     internal List<long> RequestTimesMinute { get; } = [];
 
 

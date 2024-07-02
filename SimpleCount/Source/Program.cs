@@ -42,7 +42,7 @@ internal class Program
             var countRequest = new CountRequest { Count = i };
             client.Send(countRequest);
             Console.WriteLine($"Sent: {i}");
-            countRequest.Wait();
+            countRequest.WaitResult();
         }
 
         client.Close(CloseReason.Custom("Done"));
