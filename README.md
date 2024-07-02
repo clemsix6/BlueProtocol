@@ -50,140 +50,30 @@ When a request or event is received, the corresponding method in the controller 
 
 ---
 
-## Example Usage in C#
+## 📦 Installation
 
-### Server-Side Implementation
+To install the BlueProtocol library, follow these steps:
 
-```csharp
-internal class Program
-{
-    private static void RunServer()
-    {
-        var server = new SyncServer(5855);
-        server.Start();
-        Console.WriteLine("[Server] Listening for clients");
+1. **Using .NET CLI**: Run the following command to add the BlueProtocol package to your project.
 
-        server.OnClientConnectedEvent += client => {
-            client.OnDisconnectedEvent += (c, info) => {
-                Console.WriteLine("[Server] Client disconnected");
-                server.Dispose();
-            };
+    ```sh
+    dotnet add package BlueProtocol --version latest
+    ```
 
-            Console.WriteLine("[Server] Client connected");
+2. **Using GitHub Releases**: Visit the [Releases](https://github.com/clemsix6/BlueProtocol/releases) page on the BlueProtocol GitHub repository. Download the latest release package and follow the instructions provided in the release notes to add it to your project manually.
 
-            var controller = new PlayerController();
-            client.AddController(controller);
-
-            Console.WriteLine("[Server] Listening for messages");
-            while (client.IsConnected)
-                client.Update();
-        };
-
-        while (server.IsRunning)
-            Thread.Sleep(1000);
-    }
-}
-```
-
-### Client-Side Implementation
-
-```csharp
-private static void RunClient()
-{
-    Thread.Sleep(1000);
-
-    Console.WriteLine("[Client] Connecting to server");
-    var client = SyncClient.Connect("127.0.0.1", 5855);
-    Console.WriteLine("[Client] Sending player join request");
-    var request = new PlayerJoinRequest("Player1");
-
-    // Player Join Response
-    request.OnResponse(response => {
-        if (response is PlayerJoinResponse playerJoinResponse)
-            Console.WriteLine(
-                $"[Client] Player joined: {playerJoinResponse.Name}, Level: {playerJoinResponse.Level}");
-
-        for (var i = 0; i < 100; i++) {
-            var info = new UtilEvent(i);
-            Console.WriteLine($"[Client] Sending player info: {info}");
-            client.Send(info);
-        }
-        client.Dispose();
-    });
-
-    client.Send(request);
-    Console.WriteLine("[Client] Sent");
-
-    while (client.IsConnected)
-        client.Update();
-    Console.WriteLine("[Client] Disconnected");
-}
-
-public static void Main()
-{
-    new Thread(RunClient).Start();
-    RunServer();
-}
-```
-
-### PlayerJoinRequest and PlayerJoinResponse
-
-```csharp
-public class PlayerJoinResponse : Response
-{
-    public string Name { get; }
-    public int Level { get; }
-
-    public PlayerJoinResponse(string name, int level)
-    {
-        Name = name;
-        Level = level;
-    }
-}
-
-public class PlayerJoinRequest : Request
-{
-    public string Name { get; }
-
-    public PlayerJoinRequest(string name)
-    {
-        Name = name;
-    }
-}
-```
-
-### Controller Implementation
-
-```csharp
-public class PlayerController : Controller
-{
-    [OnRequest]
-    private PlayerJoinResponse OnPlayerJoin(SyncClient client, PlayerJoinRequest request)
-    {
-        Console.WriteLine($"[Server] Received player join request: {request.Id}");
-        Console.WriteLine($"[Server] Player joined: {request.Name}");
-        return new PlayerJoinResponse(request.Name, 5);
-    }
-
-    [OnEvent]
-    private void OnPlayerInfo(SyncClient client, UtilEvent @event)
-    {
-        Console.WriteLine($"[Server] Received player info: {@event.Value}");
-    }
-}
-```
+These methods ensure that you have the latest version of BlueProtocol installed and ready to use in your .NET project.
 
 ---
 
-## 📁 Example Project: SimpleRepeat
+## 📚 Example Projects
 
-The `SimpleRepeat` project demonstrates how to use the `BlueProtocol` library to create a network of bots that
-communicate over TCP. This example showcases the basic functionalities and interactions possible with `BlueProtocol`.
+### SimpleCount
+**SimpleCount** demonstrates the use of the **BlueProtocol** library for TCP communication between a server and a client. The server listens for incoming messages and logs each received message, while the client sends a series of count requests to the server.
 
-### 🗂️ Project Structure
-- **Program.cs**: Initializes and runs the bots.
-- **Bot.cs**: Manages the bot behavior, including connecting to other bots, sending messages, and handling events.
-- **Config.cs**: Contains configuration constants.
-- **Requests**: Contains request and response classes used for bot communication.
+[SimpleCount Documentation](SimpleCount/README.md)
 
-For more details and to view the complete example, refer to the [SimpleRepeat directory](https://github.com/clemsix6/BlueProtocol/tree/master/SimpleRepeat) in the repository.
+### SimpleRepeat
+**SimpleRepeat** demonstrates the use of the **BlueProtocol** library for TCP communication between multiple "bots". Each bot connects directly to other bots, sends and receives messages, and prints the received messages to the console via a port scan starting from the `StartingPort` defined in the configuration.
+
+[SimpleRepeat Documentation](SimpleRepeat/README.md)
