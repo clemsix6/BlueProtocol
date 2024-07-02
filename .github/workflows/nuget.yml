@@ -20,23 +20,23 @@ jobs:
 
       - name: Extract version from tag
         id: extract_version
-        run: echo "##[set-output name=VERSION;]${GITHUB_REF#refs/tags/v}"
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
       - name: Extract release notes
         id: extract_notes
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           NOTES=$(git log -1 --pretty=%B $TAG)
-          echo "##[set-output name=NOTES;]$NOTES"
+          echo "NOTES=$NOTES" >> $GITHUB_ENV
 
       - name: Restore dependencies
-        run: dotnet restore BlueProtocol.sln
+        run: dotnet restore BlueProtocol/BlueProtocol.csproj
 
       - name: Build
-        run: dotnet build BlueProtocol.sln --configuration Release --no-restore /p:Version=${{ steps.extract_version.outputs.VERSION }}
+        run: dotnet build BlueProtocol/BlueProtocol.csproj --configuration Release --no-restore /p:Version=${{ env.VERSION }}
 
       - name: Pack
-        run: dotnet pack BlueProtocol/BlueProtocol.csproj --configuration Release --no-restore --output ./output /p:Version=${{ steps.extract_version.outputs.VERSION }} /p:PackageReleaseNotes="${{ steps.extract_notes.outputs.NOTES }}"
+        run: dotnet pack BlueProtocol/BlueProtocol.csproj --configuration Release --no-restore --output ./output /p:Version=${{ env.VERSION }} /p:PackageReleaseNotes="${{ env.NOTES }}"
 
       - name: Publish to NuGet
         env:
