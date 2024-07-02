@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "OTibOJDsZetl1mH6VMHz/V+kl+cYLe0/yvHkSpg5efUU0yhOLvZ+Dz8UGCfUUxCyAmYU8mnziLjoxf/SBOrqZg==",
+  "success": true,
+  "projectFilePath": "/Users/clement/RiderProjects/BlueProtocol/SimpleRepeat/SimpleRepeat.csproj",
+  "expectedPackageFiles": [
+    "/Users/clement/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}
