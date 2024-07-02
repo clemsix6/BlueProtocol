@@ -46,7 +46,14 @@
 
     <ItemGroup>
         <None Include="packages.config" />
-        <None Include="../README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\README.md">
+            <Link>README.md</Link>
+            <Pack>True</Pack>
+            <PackagePath>README.md</PackagePath>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
