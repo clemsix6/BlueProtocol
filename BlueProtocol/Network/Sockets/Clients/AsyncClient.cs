@@ -16,10 +16,10 @@ namespace BlueProtocol.Network.Sockets.Clients;
 /// </summary>
 public class AsyncClient : BlueClient
 {
-    public AsyncClient(TcpClient tcpClient) : base(tcpClient) { }
+    public AsyncClient(TcpClient tcpClient, ClientShield shield = null) : base(tcpClient, shield) { }
 
 
-    public AsyncClient(IPEndPoint remoteEndPoint) : base(remoteEndPoint) { }
+    public AsyncClient(IPEndPoint remoteEndPoint, ClientShield shield = null) : base(remoteEndPoint, shield) { }
 
 
     protected override void OnStart()

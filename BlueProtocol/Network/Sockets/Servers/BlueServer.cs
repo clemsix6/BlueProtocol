@@ -44,11 +44,19 @@ public class BlueServer<T> where T : BlueClient
 
 
     /// <summary>
+    /// The shield that protects the server with timeouts and rate limits.
+    /// </summary>
+    public ServerShield Shield { get; }
+
+
+    /// <summary>
     /// Create a new instance of <c>AsyncServer</c> with the default local end point.
     /// It listens on the loopback address and a random port.
     /// </summary>
-    public BlueServer()
+    /// <param name="shield">The shield to protect the server.</param>
+    public BlueServer(ServerShield shield = null)
     {
+        this.Shield = shield ?? new ServerShield();
         this.tcpListener = new TcpListener(IPAddress.Any, 0);
     }
 
@@ -58,9 +66,11 @@ public class BlueServer<T> where T : BlueClient
     /// It listens on any address and the specified port.
     /// </summary>
     /// <param name="port">The port to listen on.</param>
+    /// <param name="shield">The shield to protect the server.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the port is out of range.</exception>
-    public BlueServer(int port)
+    public BlueServer(int port, ServerShield shield = null)
     {
+        this.Shield = shield ?? new ServerShield();
         this.tcpListener = new TcpListener(IPAddress.Any, port);
     }
 
@@ -91,9 +101,34 @@ public class BlueServer<T> where T : BlueClient
     {
         client.Start();
 
-        client.OnDisconnectedEvent += (c, r) => {
-            this.OnClientDisconnectedEvent?.Invoke((T)c, r);
-        };
+        client.OnDisconnectedEvent += (c, r) => { this.OnClientDisconnectedEvent?.Invoke((T)c, r); };
+    }
+
+
+    private void ApplyConnectionRateLimit()
+    {
+        while (true) {
+            lock (this.Shield) {
+                var now = Environment.TickCount64;
+
+                this.Shield.ConnectionTimesSecond.RemoveAll(x => x < now - 1000);
+                this.Shield.ConnectionTimesMinute.RemoveAll(x => x < now - 60000);
+
+                if (this.Shield.ConnectionTimesSecond.Count < this.Shield.MaxConnectionsPerSecond &&
+                    this.Shield.ConnectionTimesMinute.Count < this.Shield.MaxConnectionsPerMinute)
+                    break;
+                Thread.Sleep(100);
+            }
+        }
+    }
+
+
+    private void RegisterConnection()
+    {
+        lock (this.Shield) {
+            this.Shield.ConnectionTimesSecond.Add(Environment.TickCount64);
+            this.Shield.ConnectionTimesMinute.Add(Environment.TickCount64);
+        }
     }
 
 
@@ -101,9 +136,9 @@ public class BlueServer<T> where T : BlueClient
     {
         try {
             var tcpClient = this.tcpListener.EndAcceptTcpClient(result);
-            this.tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
 
-            if (Activator.CreateInstance(typeof(T), tcpClient) is not T client)
+            var shield = (ClientShield)this.Shield.DefaultClientShield.Clone();
+            if (Activator.CreateInstance(typeof(T), tcpClient, shield) is not T client)
                 throw new InvalidOperationException("The client type is invalid.");
 
             lock (this.controllers)
@@ -112,6 +147,11 @@ public class BlueServer<T> where T : BlueClient
             RunClient(client);
 
             this.OnClientConnectedEvent?.Invoke(client);
+
+            RegisterConnection();
+            ApplyConnectionRateLimit();
+
+            this.tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
         } catch (SocketException) {
             if (!this.disposed)
                 throw;
@@ -132,8 +172,8 @@ public class BlueServer<T> where T : BlueClient
 
     public BlueClient Connect(IPEndPoint remoteEndPoint)
     {
-        var client = Activator.CreateInstance(typeof(T), remoteEndPoint) as T;
-        if (client == null)
+        var shield = (ClientShield)this.Shield.DefaultClientShield.Clone();
+        if (Activator.CreateInstance(typeof(T), remoteEndPoint, shield) is not T client)
             throw new InvalidOperationException("The client type is invalid.");
 
         RunClient(client);

@@ -36,7 +36,7 @@ public abstract class BlueClient
     /// <summary>
     /// The shield that protects the client with timeouts and rate limits.
     /// </summary>
-    public ClientShield ClientShield { get; set; }
+    public ClientShield Shield { get; }
 
     /// <summary>
     /// Indicates if the client is connected.
@@ -61,7 +61,7 @@ public abstract class BlueClient
 
     internal BlueClient(TcpClient tcpClient, ClientShield clientShield = null)
     {
-        this.ClientShield = clientShield ?? new ClientShield();
+        this.Shield = clientShield ?? new ClientShield();
         this.tcpClient = tcpClient;
         this.networkStream = tcpClient.GetStream();
     }
@@ -69,7 +69,7 @@ public abstract class BlueClient
 
     protected BlueClient(IPEndPoint remoteEndPoint, ClientShield clientShield = null)
     {
-        this.ClientShield = clientShield ?? new ClientShield();
+        this.Shield = clientShield ?? new ClientShield();
 
         try {
             this.tcpClient = new TcpClient();
@@ -120,7 +120,7 @@ public abstract class BlueClient
     private void UpdateTimeout()
     {
         lock (this.requests) {
-            if (this.requests.GetTimedOutItems(this.ClientShield.ResponseTimeout).Count != 0) {
+            if (this.requests.GetTimedOutItems(this.Shield.ResponseTimeout).Count != 0) {
                 Close(CloseReason.Timeout("Response timed out"));
                 throw new BlueProtocolTimeoutException("Request timed out");
             }
@@ -130,8 +130,8 @@ public abstract class BlueClient
 
     private void CheckLifeTime()
     {
-        if (this.ClientShield.LifeTime != -1 &&
-            (DateTime.Now - this.ConnectionTime).TotalMilliseconds >= this.ClientShield.LifeTime)
+        if (this.Shield.LifeTime != -1 &&
+            (DateTime.Now - this.ConnectionTime).TotalMilliseconds >= this.Shield.LifeTime)
             Close(CloseReason.LifeTimeExceeded("Life time exceeded"));
     }
 
@@ -223,14 +223,14 @@ public abstract class BlueClient
     protected void ApplyRateLimit()
     {
         while (true) {
-            lock (this.ClientShield) {
-                var now = DateTime.Now.Ticks;
+            lock (this.Shield) {
+                var now = Environment.TickCount64;
 
-                this.ClientShield.RequestTimesSecond.RemoveAll(x => x < now - 1000);
-                this.ClientShield.RequestTimesMinute.RemoveAll(x => x < now - 60000);
+                this.Shield.RequestTimesSecond.RemoveAll(x => x < now - 1000);
+                this.Shield.RequestTimesMinute.RemoveAll(x => x < now - 60000);
 
-                if (this.ClientShield.RequestTimesSecond.Count < this.ClientShield.MaxRequestsPerSecond &&
-                    this.ClientShield.RequestTimesMinute.Count < this.ClientShield.MaxRequestsPerMinute)
+                if (this.Shield.RequestTimesSecond.Count < this.Shield.MaxRequestsPerSecond &&
+                    this.Shield.RequestTimesMinute.Count < this.Shield.MaxRequestsPerMinute)
                     break;
                 Thread.Sleep(100);
             }
@@ -240,9 +240,9 @@ public abstract class BlueClient
 
     protected void RegisterRequest()
     {
-        lock (this.ClientShield) {
-            this.ClientShield.RequestTimesSecond.Add(DateTime.Now.Ticks);
-            this.ClientShield.RequestTimesMinute.Add(DateTime.Now.Ticks);
+        lock (this.Shield) {
+            this.Shield.RequestTimesSecond.Add(Environment.TickCount64);
+            this.Shield.RequestTimesMinute.Add(Environment.TickCount64);
         }
     }
 

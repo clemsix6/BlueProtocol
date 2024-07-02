@@ -21,10 +21,10 @@ public class SyncClient : BlueClient
     private readonly MessageQueue messages = new();
 
 
-    public SyncClient(TcpClient tcpClient) : base(tcpClient) { }
+    public SyncClient(TcpClient tcpClient, ClientShield shield = null) : base(tcpClient, shield) { }
 
 
-    public SyncClient(IPEndPoint remoteEndPoint) : base(remoteEndPoint) { }
+    public SyncClient(IPEndPoint remoteEndPoint, ClientShield shield = null) : base(remoteEndPoint, shield) { }
 
 
     protected override void OnStart()

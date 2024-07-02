@@ -4,7 +4,7 @@ namespace BlueProtocol.Network.Sockets.Clients;
 /// <summary>
 /// The <c>Shield</c> class models the timeouts and rate limits for a client.
 /// </summary>
-public class ClientShield
+public class ClientShield : ICloneable
 {
     // Timeouts
 
@@ -33,4 +33,15 @@ public class ClientShield
     /// </summary>
     public int MaxRequestsPerMinute { get; init; } = 600;
     internal List<long> RequestTimesMinute { get; } = [];
+
+
+    public object Clone()
+    {
+        return new ClientShield {
+            LifeTime = this.LifeTime,
+            ResponseTimeout = this.ResponseTimeout,
+            MaxRequestsPerSecond = this.MaxRequestsPerSecond,
+            MaxRequestsPerMinute = this.MaxRequestsPerMinute
+        };
+    }
 }
