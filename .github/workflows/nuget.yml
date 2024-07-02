@@ -1,0 +1,44 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Extract version from tag
+        id: extract_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Extract release notes
+        id: extract_notes
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          NOTES=$(git log -1 --pretty=%B $TAG)
+          echo "NOTES=$NOTES" >> $GITHUB_ENV
+
+      - name: Restore dependencies
+        run: dotnet restore BlueProtocol/BlueProtocol.csproj
+
+      - name: Build
+        run: dotnet build BlueProtocol/BlueProtocol.csproj --configuration Release --no-restore /p:Version=${{ env.VERSION }}
+
+      - name: Pack
+        run: dotnet pack BlueProtocol/BlueProtocol.csproj --configuration Release --no-restore --output ./output /p:Version=${{ env.VERSION }} /p:PackageReleaseNotes="${{ env.NOTES }}"
+
+      - name: Publish to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push ./output/*.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json

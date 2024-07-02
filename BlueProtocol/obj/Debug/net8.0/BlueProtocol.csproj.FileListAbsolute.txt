@@ -1,0 +1,11 @@
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/bin/Debug/net8.0/BlueProtocol.deps.json
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/bin/Debug/net8.0/BlueProtocol.dll
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/bin/Debug/net8.0/BlueProtocol.pdb
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/BlueProtocol.csproj.AssemblyReference.cache
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/BlueProtocol.GeneratedMSBuildEditorConfig.editorconfig
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/BlueProtocol.csproj.CoreCompileInputs.cache
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/BlueProtocol.sourcelink.json
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/BlueProtocol.dll
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/refint/BlueProtocol.dll
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/BlueProtocol.pdb
+/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/Debug/net8.0/ref/BlueProtocol.dll

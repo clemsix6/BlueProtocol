@@ -1,0 +1,124 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/clement/RiderProjects/BlueProtocol/SimpleCount/SimpleCount.csproj": {}
+  },
+  "projects": {
+    "/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/BlueProtocol.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/BlueProtocol.csproj",
+        "projectName": "BlueProtocol",
+        "projectPath": "/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/BlueProtocol.csproj",
+        "packagesPath": "/Users/clement/.nuget/packages/",
+        "outputPath": "/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/clement/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.302/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/clement/RiderProjects/BlueProtocol/SimpleCount/SimpleCount.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/clement/RiderProjects/BlueProtocol/SimpleCount/SimpleCount.csproj",
+        "projectName": "SimpleCount",
+        "projectPath": "/Users/clement/RiderProjects/BlueProtocol/SimpleCount/SimpleCount.csproj",
+        "packagesPath": "/Users/clement/.nuget/packages/",
+        "outputPath": "/Users/clement/RiderProjects/BlueProtocol/SimpleCount/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/clement/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/BlueProtocol.csproj": {
+                "projectPath": "/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/BlueProtocol.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.302/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

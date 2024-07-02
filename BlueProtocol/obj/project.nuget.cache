@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "D6oHdE8tk/+rRpzgS2loT90tL4IEVkXJavncrGHCs5I9pmt9nWyvOl7Y9AO2NfS5uXRXjgyBnG7ozVNm4tIoIA==",
+  "success": true,
+  "projectFilePath": "/Users/clement/RiderProjects/BlueProtocol/BlueProtocol/BlueProtocol.csproj",
+  "expectedPackageFiles": [
+    "/Users/clement/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

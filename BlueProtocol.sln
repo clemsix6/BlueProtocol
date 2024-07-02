@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlueProtocol", "BlueProtocol\BlueProtocol.csproj", "{6BC761D3-BF07-4CD3-96D7-69EE52387393}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{1F84593B-7C30-496B-8AE2-8C18FC8E2861}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleRepeat", "SimpleRepeat\SimpleRepeat.csproj", "{99EBF792-FAA9-45F5-B3D5-8AE91CE57390}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleCount", "SimpleCount\SimpleCount.csproj", "{F2B77800-FFEE-496D-BDCE-BA15593EEFAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6BC761D3-BF07-4CD3-96D7-69EE52387393}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BC761D3-BF07-4CD3-96D7-69EE52387393}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BC761D3-BF07-4CD3-96D7-69EE52387393}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BC761D3-BF07-4CD3-96D7-69EE52387393}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99EBF792-FAA9-45F5-B3D5-8AE91CE57390}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99EBF792-FAA9-45F5-B3D5-8AE91CE57390}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99EBF792-FAA9-45F5-B3D5-8AE91CE57390}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99EBF792-FAA9-45F5-B3D5-8AE91CE57390}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2B77800-FFEE-496D-BDCE-BA15593EEFAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2B77800-FFEE-496D-BDCE-BA15593EEFAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2B77800-FFEE-496D-BDCE-BA15593EEFAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2B77800-FFEE-496D-BDCE-BA15593EEFAE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{99EBF792-FAA9-45F5-B3D5-8AE91CE57390} = {1F84593B-7C30-496B-8AE2-8C18FC8E2861}
+		{F2B77800-FFEE-496D-BDCE-BA15593EEFAE} = {1F84593B-7C30-496B-8AE2-8C18FC8E2861}
+	EndGlobalSection
+EndGlobal

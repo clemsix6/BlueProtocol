@@ -1,0 +1,46 @@
+# Build directories
+/bin/
+/obj/
+/output/
+
+# NuGet packages
+/packages/
+
+# Rider project files
+.idea/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider deployment configurations
+.idea/artifacts
+
+# Rider test results
+.idea/testResults
+
+# File-based project format
+.idea/codeStyles
+.idea/dictionaries
+.idea/inspectionProfiles
+.idea/jarRepositories.xml
+.idea/workspace.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/runConfigurations
+.idea/scratches
+.idea/scopes/
+.idea/tasks.xml
+.idea/vcs.xml
+
+# Rider language level
+.idea/languageLevel.xml
+
+# Rider project template
+.idea/projectTemplate.xml
+
+# macOS system files
+**/.DS_Store
