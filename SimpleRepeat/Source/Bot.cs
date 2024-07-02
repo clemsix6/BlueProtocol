@@ -33,7 +33,7 @@ public class Bot : Controller
         this.server = new BlueServer<AsyncClient>(port);
         this.Thread = new Thread(this.Loop);
 
-        this.server.AddController(this);
+        this.server.RequestHandler.RegisterController(this);
     }
 
 
@@ -67,20 +67,17 @@ public class Bot : Controller
                 var connectionRequest = new ConnectionRequest { Port = this.port };
                 // Set the response handler
                 connectionRequest.OnResponse(response => {
-                    // Cast the response to a connection response
-                    var connectionResponse = (ConnectionResponse)response;
-
                     // If the connection was not authorized, dispose the client
-                    if (!connectionResponse.Authorized) {
+                    if (!response.Authorized) {
                         client.Close();
                         return;
                     }
 
                     // Add the client to the list of clients
                     lock (this.clients)
-                        this.clients.Add(connectionResponse.Port, client);
+                        this.clients.Add(response.Port, client);
 
-                    this.Print("[+] ", $"Connection authorized by [{connectionResponse.Port}]");
+                    this.Print("[+] ", $"Connection authorized by [{response.Port}]");
                 });
 
                 // Send the connection request
@@ -146,14 +143,14 @@ public class Bot : Controller
     // --- Event handlers ---
 
 
-    [OnEvent]
+    [Route]
     private void OnReceiveMessage(Message message)
     {
         Print("< ", $"Received message from {message.SenderPort}: {message.Content}");
     }
 
 
-    [OnRequest]
+    [Route]
     private ConnectionResponse OnConnectionRequest(AsyncClient client, ConnectionRequest request)
     {
         lock (this.clients) {

@@ -32,7 +32,7 @@ public class Response
     }
 
 
-    internal Response(Request request, int code, string message)
+    internal Response(ARequest request, int code, string message)
     {
         this.RequestId = request.RequestId;
         this.Code = code;

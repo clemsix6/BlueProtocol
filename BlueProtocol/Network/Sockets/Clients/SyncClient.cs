@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using BlueProtocol.Controllers;
 using BlueProtocol.Exceptions;
 using BlueProtocol.Network.Communication.Events;
 using BlueProtocol.Network.Communication.Messages;
@@ -18,13 +19,39 @@ namespace BlueProtocol.Network.Sockets.Clients;
 /// </summary>
 public class SyncClient : BlueClient
 {
+    /// <summary>
+    /// The request handler for the client. It is used to process incoming requests and events.
+    /// </summary>
+    public RequestHandler<SyncClient> RequestHandler { get; }
+
     private readonly MessageQueue messages = new();
 
 
-    public SyncClient(TcpClient tcpClient, ClientShield shield = null) : base(tcpClient, shield) { }
+    public SyncClient(TcpClient tcpClient, ClientShield shield = null,
+        RequestHandler<SyncClient> requestHandler = null) :
+        base(tcpClient, shield)
+    {
+        this.RequestHandler = requestHandler ?? new RequestHandler<SyncClient>();
+        RegisterSystemActions();
+    }
 
 
-    public SyncClient(IPEndPoint remoteEndPoint, ClientShield shield = null) : base(remoteEndPoint, shield) { }
+    public SyncClient(IPEndPoint remoteEndPoint, ClientShield shield = null,
+        RequestHandler<SyncClient> requestHandler = null) :
+        base(remoteEndPoint, shield)
+    {
+        this.RequestHandler = requestHandler ?? new RequestHandler<SyncClient>();
+        RegisterSystemActions();
+    }
+
+
+    private void RegisterSystemActions()
+    {
+        this.RequestHandler.RegisterRequestHandler<CloseRequest>((_, request) => {
+            OnRemoteClose(request.Reason);
+            return new CloseResponse();
+        });
+    }
 
 
     protected override void OnStart()
@@ -49,7 +76,7 @@ public class SyncClient : BlueClient
 
     private void ReceiveLoop()
     {
-        while (this.IsConnected) {
+        while (this.IsRunning) {
             var data = ReceiveData();
             if (data == null)
                 continue;
@@ -63,15 +90,11 @@ public class SyncClient : BlueClient
     }
 
 
-    private void UpdateRequest(Request request)
+    private void UpdateRequest(ARequest request)
     {
-        lock (this.controllers) {
-            foreach (var controller in this.controllers.Items) {
-                if (controller.OnRequest(this, request, out var response) && response is Response r) {
-                    Send(r);
-                    return;
-                }
-            }
+        if (this.RequestHandler.OnRequest(this, request, out var response) && response is Response r) {
+            Send(r);
+            return;
         }
 
         throw new BlueProtocolControllerException($"No controller found for request {request.GetType().FullName}");
@@ -93,12 +116,8 @@ public class SyncClient : BlueClient
 
     private void UpdateEvent(Event ev)
     {
-        lock (this.controllers) {
-            foreach (var controller in this.controllers.Items) {
-                if (controller.OnEvent(this, ev))
-                    return;
-            }
-        }
+        if (this.RequestHandler.OnEvent(this, ev))
+            return;
 
         throw new BlueProtocolControllerException($"No controller found for event {ev.GetType().FullName}");
     }
@@ -113,7 +132,7 @@ public class SyncClient : BlueClient
         var messages = this.messages.DequeueAll();
         foreach (var message in messages) {
             switch (message) {
-                case Request request:
+                case ARequest request:
                     UpdateRequest(request);
                     break;
                 case Response response:
@@ -142,7 +161,7 @@ public class SyncClient : BlueClient
             return;
 
         switch (message) {
-            case Request request:
+            case ARequest request:
                 UpdateRequest(request);
                 break;
             case Response response:

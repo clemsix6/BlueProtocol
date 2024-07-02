@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using BlueProtocol.Controllers;
 using BlueProtocol.Exceptions;
 using BlueProtocol.Network.Communication.Events;
 using BlueProtocol.Network.Communication.Messages;
@@ -16,10 +17,39 @@ namespace BlueProtocol.Network.Sockets.Clients;
 /// </summary>
 public class AsyncClient : BlueClient
 {
-    public AsyncClient(TcpClient tcpClient, ClientShield shield = null) : base(tcpClient, shield) { }
+    /// <summary>
+    /// The request handler for the client. It is used to process incoming requests and events.
+    /// </summary>
+    public RequestHandler<AsyncClient> RequestHandler { get; }
 
 
-    public AsyncClient(IPEndPoint remoteEndPoint, ClientShield shield = null) : base(remoteEndPoint, shield) { }
+    public AsyncClient(TcpClient tcpClient, ClientShield shield = null,
+        RequestHandler<AsyncClient> requestHandler = null) :
+        base(tcpClient, shield)
+    {
+        this.RequestHandler = requestHandler ?? new RequestHandler<AsyncClient>();
+        RegisterSystemActions();
+    }
+
+
+    public AsyncClient(IPEndPoint remoteEndPoint, ClientShield shield = null,
+        RequestHandler<AsyncClient> requestHandler = null) :
+        base(remoteEndPoint, shield)
+    {
+        this.RequestHandler = requestHandler ?? new RequestHandler<AsyncClient>();
+        RegisterSystemActions();
+    }
+
+
+    private void RegisterSystemActions()
+    {
+        this.RequestHandler.RegisterEventHandler<PingEvent>((_, _) => { });
+
+        this.RequestHandler.RegisterRequestHandler<CloseRequest>((_, request) => {
+            OnRemoteClose(request.Reason);
+            return new CloseResponse();
+        });
+    }
 
 
     protected override void OnStart()
@@ -42,24 +72,12 @@ public class AsyncClient : BlueClient
     }
 
 
-    private void ProcessCloseEvent(CloseRequest closeRequest)
+    private void UpdateRequest(ARequest request)
     {
-        OnRemoteClose(closeRequest.Reason);
-        var response = Response.Ok();
-        response.RequestId = closeRequest.RequestId;
-        Send(response);
-    }
-
-
-    private void UpdateRequest(Request request)
-    {
-        lock (this.controllers) {
-            foreach (var controller in this.controllers.Items) {
-                if (controller.OnRequest(this, request, out var response) && response is Response r) {
-                    Send(r);
-                    return;
-                }
-            }
+        var result = this.RequestHandler.OnRequest(this, request, out var response);
+        if (result && response is Response r) {
+            Send(r);
+            return;
         }
 
         throw new BlueProtocolControllerException(
@@ -82,12 +100,8 @@ public class AsyncClient : BlueClient
 
     private void UpdateEvent(Event ev)
     {
-        lock (this.controllers) {
-            foreach (var controller in this.controllers.Items) {
-                if (controller.OnEvent(this, ev))
-                    return;
-            }
-        }
+        if (this.RequestHandler.OnEvent(this, ev))
+            return;
 
         throw new BlueProtocolControllerException($"No controller found for event {ev.GetType().FullName}");
     }
@@ -95,23 +109,18 @@ public class AsyncClient : BlueClient
 
     private void ReceiveLoop()
     {
-        while (this.IsConnected) {
+        while (true) {
             var data = ReceiveData();
             if (data == null)
                 continue;
+            if (!this.IsRunning)
+                break;
 
             RegisterRequest();
             ApplyRateLimit();
 
             switch (data) {
-                case PingEvent:
-                    continue;
-
-                case CloseRequest closeEvent:
-                    ProcessCloseEvent(closeEvent);
-                    continue;
-
-                case Request request:
+                case ARequest request:
                     Task.Run(() => UpdateRequest(request));
                     continue;
 

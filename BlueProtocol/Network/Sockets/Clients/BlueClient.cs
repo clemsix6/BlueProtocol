@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using BlueProtocol.Controllers;
 using BlueProtocol.Exceptions;
 using BlueProtocol.Network.Communication.Events;
 using BlueProtocol.Network.Communication.Messages;
@@ -13,18 +12,17 @@ namespace BlueProtocol.Network.Sockets.Clients;
 
 
 /// <summary>
-/// The <c>BlueClient</c> class models all the logic for a client,
+/// The <c>BlueClient</c> class models all the logic for data sending,
 /// it includes the connection and the sending of messages.
 /// This class is abstract and should be inherited by a specific client implementation
-/// (<c>SyncClient</c> or <c>AsyncClient</c>).
+/// (<c>SyncClient</c> or <c>AsyncClient</c>) for request handling.
 /// </summary>
 public abstract class BlueClient
 {
     private readonly TcpClient tcpClient;
     protected readonly NetworkStream networkStream;
 
-    internal readonly ClientMemory<Controller> controllers = new();
-    internal readonly ClientMemory<Request> requests = new();
+    internal readonly ClientMemory<ARequest> requests = new();
     protected readonly List<Thread> threads = [];
 
 
@@ -39,9 +37,9 @@ public abstract class BlueClient
     public ClientShield Shield { get; }
 
     /// <summary>
-    /// Indicates if the client is connected.
+    /// Indicates if the receiving and sending threads are running.
     /// </summary>
-    public bool IsConnected { get; private set; }
+    public bool IsRunning { get; private set; }
 
     /// <summary>
     /// The remote endpoint of the client.
@@ -61,8 +59,8 @@ public abstract class BlueClient
 
     internal BlueClient(TcpClient tcpClient, ClientShield clientShield = null)
     {
-        this.Shield = clientShield ?? new ClientShield();
         this.tcpClient = tcpClient;
+        this.Shield = clientShield ?? new ClientShield();
         this.networkStream = tcpClient.GetStream();
     }
 
@@ -99,9 +97,9 @@ public abstract class BlueClient
     /// </summary>
     public void Start()
     {
-        if (this.IsConnected)
+        if (this.IsRunning)
             return;
-        this.IsConnected = true;
+        this.IsRunning = true;
 
         var mainThread = new Thread(MainLoop);
         mainThread.Start();
@@ -140,7 +138,7 @@ public abstract class BlueClient
     {
         var lastPingTime = Environment.TickCount64;
 
-        while (this.IsConnected) {
+        while (this.IsRunning) {
             Thread.Sleep(500);
 
             if (Environment.TickCount64 - lastPingTime >= 5000) {
@@ -159,7 +157,7 @@ public abstract class BlueClient
     /// </summary>
     /// <param name="request">The request to send.</param>
     /// <exception cref="BlueProtocolException">Thrown when the request is waiting for a response.</exception>
-    public void Send(Request request)
+    public void Send(ARequest request)
     {
         request.RequestId = Guid.NewGuid().ToString();
         lock (this.requests)
@@ -207,19 +205,6 @@ public abstract class BlueClient
     }
 
 
-    /// <summary>
-    /// Add a controller to the client.
-    /// </summary>
-    /// <param name="controller">The controller to add.</param>
-    /// <exception cref="BlueProtocolControllerException">Thrown when the controller is invalid.</exception>
-    public void AddController(Controller controller)
-    {
-        controller.Build();
-        lock (this.controllers)
-            this.controllers.Add(controller);
-    }
-
-
     protected void ApplyRateLimit()
     {
         while (true) {
@@ -255,7 +240,7 @@ public abstract class BlueClient
 
     protected void OnRemoteClose(CloseReason reason)
     {
-        this.IsConnected = false;
+        this.IsRunning = false;
         this.OnDisconnectedEvent?.Invoke(this, reason);
 
         Thread.Sleep(1000);
@@ -274,10 +259,10 @@ public abstract class BlueClient
     /// <param name="reason">The reason for closing the client.</param>
     public void Close(CloseReason reason)
     {
-        if (!this.IsConnected)
+        if (!this.IsRunning)
             return;
 
-        this.IsConnected = false;
+        this.IsRunning = false;
         this.OnDisconnectedEvent?.Invoke(this, reason);
 
         var closeRequest = new CloseRequest { Reason = reason };
@@ -293,17 +278,16 @@ public abstract class BlueClient
     }
 
 
-
     /// <summary>
     /// [Unrecommended] Close the client without sending a close request.
     /// </summary>
     public void Close()
     {
-        if (!this.IsConnected)
+        if (!this.IsRunning)
             return;
 
         var reason = CloseReason.NoReason();
-        this.IsConnected = false;
+        this.IsRunning = false;
         this.OnDisconnectedEvent?.Invoke(this, reason);
 
         var closeRequest = new CloseRequest { Reason = reason };

@@ -12,41 +12,44 @@ namespace BlueProtocol.Network.Sockets.Servers;
 /// <summary>
 /// The <c>BlueServer</c> class models the logic for a server that listens for clients.
 /// </summary>
-/// <typeparam name="T">
+/// <typeparam name="TClient">
 /// The type of client to use (<c>SyncClient</c> or <c>AsyncClient</c>).
 /// </typeparam>
-public class BlueServer<T> where T : BlueClient
+public class BlueServer<TClient> where TClient : BlueClient
 {
     private readonly TcpListener tcpListener;
-    private readonly List<Controller> controllers = [];
     private bool disposed;
 
 
     /// <summary>
     /// Event that is triggered when a client connects to the server.
     /// </summary>
-    public event Action<T> OnClientConnectedEvent;
+    public event Action<TClient> OnClientConnectedEvent;
 
     /// <summary>
     /// Event that is triggered when a client disconnects from the server.
     /// </summary>
-    public event Action<T, CloseReason> OnClientDisconnectedEvent;
+    public event Action<TClient, CloseReason> OnClientDisconnectedEvent;
 
     /// <summary>
     /// Gets a value indicating whether the server is running.
     /// </summary>
-    public bool IsRunning => this.tcpListener.Server.IsBound;
+    public bool IsRunning { get; private set; }
 
     /// <summary>
     /// Gets the local end point of the server.
     /// </summary>
     public IPEndPoint LocalEndPoint => (IPEndPoint)this.tcpListener.LocalEndpoint;
 
-
     /// <summary>
     /// The shield that protects the server with timeouts and rate limits.
     /// </summary>
     public ServerShield Shield { get; }
+
+    /// <summary>
+    /// The request handler that handles incoming requests.
+    /// </summary>
+    public RequestHandler<TClient> RequestHandler { get; } = new();
 
 
     /// <summary>
@@ -80,28 +83,19 @@ public class BlueServer<T> where T : BlueClient
     /// </summary>
     public void Start()
     {
+        this.IsRunning = true;
         this.tcpListener.Start();
         this.tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
     }
 
 
     /// <summary>
-    /// Add a controller to the server.
+    /// Stop the server.
     /// </summary>
-    /// <param name="controller">The controller to add.</param>
-    /// <exception cref="BlueProtocolControllerException">Thrown when the controller is invalid.</exception>
-    public void AddController(Controller controller)
+    public void Stop()
     {
-        lock (this.controllers)
-            this.controllers.Add(controller);
-    }
-
-
-    private void RunClient(T client)
-    {
-        client.Start();
-
-        client.OnDisconnectedEvent += (c, r) => { this.OnClientDisconnectedEvent?.Invoke((T)c, r); };
+        this.IsRunning = false;
+        this.tcpListener.Stop();
     }
 
 
@@ -138,20 +132,23 @@ public class BlueServer<T> where T : BlueClient
             var tcpClient = this.tcpListener.EndAcceptTcpClient(result);
 
             var shield = (ClientShield)this.Shield.DefaultClientShield.Clone();
-            if (Activator.CreateInstance(typeof(T), tcpClient, shield) is not T client)
+            var requestHandler = (RequestHandler<TClient>)this.RequestHandler.Clone();
+            if (Activator.CreateInstance(typeof(TClient), tcpClient, shield, requestHandler) is not TClient client)
                 throw new InvalidOperationException("The client type is invalid.");
 
-            lock (this.controllers)
-                this.controllers.ForEach(x => client.AddController(x));
-
-            RunClient(client);
-
-            this.OnClientConnectedEvent?.Invoke(client);
+            client.Start();
+            if (!Shield.AcceptNewConnections || !this.IsRunning) {
+                client.Close(CloseReason.ConnectionRefused("Server is not accepting new connections."));
+            } else {
+                client.OnDisconnectedEvent += (c, r) => { this.OnClientDisconnectedEvent?.Invoke((TClient)c, r); };
+                this.OnClientConnectedEvent?.Invoke(client);
+            }
 
             RegisterConnection();
             ApplyConnectionRateLimit();
 
-            this.tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
+            if (this.IsRunning)
+                this.tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
         } catch (SocketException) {
             if (!this.disposed)
                 throw;
@@ -173,13 +170,13 @@ public class BlueServer<T> where T : BlueClient
     public BlueClient Connect(IPEndPoint remoteEndPoint)
     {
         var shield = (ClientShield)this.Shield.DefaultClientShield.Clone();
-        if (Activator.CreateInstance(typeof(T), remoteEndPoint, shield) is not T client)
+        var requestHandler = (RequestHandler<TClient>)this.RequestHandler.Clone();
+        if (Activator.CreateInstance(typeof(TClient), remoteEndPoint, shield, requestHandler) is not TClient client)
             throw new InvalidOperationException("The client type is invalid.");
 
-        RunClient(client);
-
-        lock (this.controllers)
-            this.controllers.ForEach(x => client.AddController(x));
+        client.Start();
+        client.OnDisconnectedEvent += (c, r) => { this.OnClientDisconnectedEvent?.Invoke((TClient)c, r); };
+        this.OnClientConnectedEvent?.Invoke(client);
 
         this.OnClientConnectedEvent?.Invoke(client);
 

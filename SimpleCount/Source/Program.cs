@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using BlueProtocol.Controllers;
 using BlueProtocol.Network.Communication.Requests;
 using BlueProtocol.Network.Communication.System;
 using BlueProtocol.Network.Sockets.Clients;
@@ -8,7 +7,7 @@ using BlueProtocol.Network.Sockets.Servers;
 
 internal class Program
 {
-    private static void Main(string[] args)
+    private static void Main()
     {
         var task1 = Task.Run(RunServer);
         var task2 = Task.Run(RunClient);
@@ -20,7 +19,11 @@ internal class Program
     private static void RunServer()
     {
         var server = new BlueServer<AsyncClient>(5055);
-        server.AddController(new ServerController());
+        server.RequestHandler.RegisterRequestHandler<CountRequest>((client, request) => {
+            Console.WriteLine($"Received: {request.Count} from {client.RemoteEndPoint}");
+            return new CountResponse();
+        });
+
         server.Start();
 
         server.OnClientConnectedEvent += client => Console.WriteLine($"Client connected: {client.RemoteEndPoint}");
@@ -36,6 +39,7 @@ internal class Program
         Thread.Sleep(1000);
 
         var client = new AsyncClient(new IPEndPoint(IPAddress.Loopback, 5055));
+        client.OnDisconnectedEvent += (_, reason) => Console.WriteLine($"Disconnected: {reason}");
         client.Start();
 
         for (var i = 0; i < 100; i++) {
@@ -50,23 +54,10 @@ internal class Program
 }
 
 
-internal class CountRequest : Request
+internal class CountRequest : Request<CountResponse>
 {
     public required int Count { get; init; }
 }
 
 
-internal class CountResponse : Response
-{
-}
-
-
-internal class ServerController : Controller
-{
-    [OnRequest]
-    public Response OnMessageReceived(AsyncClient client, CountRequest message)
-    {
-        Console.WriteLine($"Received: {message.Count} from {client.RemoteEndPoint}");
-        return new CountResponse();
-    }
-}
+internal class CountResponse : Response { }
